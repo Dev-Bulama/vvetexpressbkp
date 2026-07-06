@@ -16,13 +16,22 @@ class SitemapDataGrid extends DataGrid
      */
     public function prepareQueryBuilder()
     {
-        return DB::table('sitemaps')
-            ->addSelect(
-                'id',
-                'file_name',
-                'path',
-                'path as url'
-            );
+        $queryBuilder = DB::table('sitemaps')
+            ->select(
+                'sitemaps.id',
+                'sitemaps.file_name',
+                'sitemaps.path',
+                'sitemaps.path as url'
+            )
+            ->addSelect(DB::raw('GROUP_CONCAT(DISTINCT code) as channel'))
+            ->leftJoin('sitemap_channels', 'sitemaps.id', '=', 'sitemap_channels.sitemap_id')
+            ->leftJoin('channels', 'sitemap_channels.channel_id', '=', 'channels.id')
+            ->groupBy('sitemaps.id', 'sitemaps.file_name', 'sitemaps.path');
+
+        $this->addFilter('id', 'sitemaps.id');
+        $this->addFilter('channel', 'sitemap_channels.channel_id');
+
+        return $queryBuilder;
     }
 
     /**
@@ -37,6 +46,19 @@ class SitemapDataGrid extends DataGrid
             'label' => trans('admin::app.marketing.search-seo.sitemaps.index.datagrid.id'),
             'type' => 'integer',
             'filterable' => true,
+            'sortable' => true,
+        ]);
+
+        $this->addColumn([
+            'index' => 'channel',
+            'label' => trans('admin::app.marketing.search-seo.sitemaps.index.datagrid.channel'),
+            'type' => 'string',
+            'filterable' => true,
+            'filterable_type' => 'dropdown',
+            'filterable_options' => collect(core()->getAllChannels())
+                ->map(fn ($channel) => ['label' => $channel->name, 'value' => $channel->id])
+                ->values()
+                ->toArray(),
             'sortable' => true,
         ]);
 
@@ -80,9 +102,8 @@ class SitemapDataGrid extends DataGrid
                 'icon' => 'icon-edit',
                 'title' => trans('admin::app.marketing.search-seo.sitemaps.index.datagrid.edit'),
                 'method' => 'GET',
-                'route' => 'admin.marketing.search_seo.sitemaps.update',
                 'url' => function ($row) {
-                    return route('admin.marketing.search_seo.sitemaps.update', $row->id);
+                    return route('admin.marketing.search_seo.sitemaps.edit', $row->id);
                 },
             ]);
         }

@@ -5,7 +5,9 @@ namespace Webkul\Sitemap\Models;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
+use Webkul\Core\Models\ChannelProxy;
 use Webkul\Marketing\Database\Factories\SitemapFactory;
 use Webkul\Sitemap\Contracts\Sitemap as SitemapContract;
 
@@ -33,6 +35,16 @@ class Sitemap extends Model implements SitemapContract
     protected $casts = [
         'additional' => 'json',
     ];
+
+    /**
+     * Get the channels.
+     *
+     * @return BelongsToMany
+     */
+    public function channels()
+    {
+        return $this->belongsToMany(ChannelProxy::modelClass(), 'sitemap_channels', 'sitemap_id');
+    }
 
     /**
      * Delete the sitemap from storage.

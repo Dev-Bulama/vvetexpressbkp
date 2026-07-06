@@ -61,24 +61,37 @@ class ProcessSitemap implements ShouldQueue
         $this->sitemap->deleteFromStorage();
 
         /**
+         * Channels the sitemap is scoped to.
+         */
+        $channelIds = $this->sitemap->channels->pluck('id')->all();
+
+        if (empty($channelIds)) {
+            return;
+        }
+
+        /**
          * Process the store URL.
          */
         $this->processItems([Url::create('/')]);
 
         /**
-         * Process the categories.
+         * Process the categories scoped to the sitemap's channels.
          */
-        Category::query()->chunk(100, fn ($items) => $this->processItems($items));
+        $this->processCategories($channelIds);
 
         /**
-         * Process the products.
+         * Process the products scoped to the sitemap's channels.
          */
-        Product::query()->chunk(100, fn ($items) => $this->processItems($items));
+        Product::query()
+            ->whereHas('channels', fn ($query) => $query->whereIn('channel_id', $channelIds))
+            ->chunk(100, fn ($items) => $this->processItems($items));
 
         /**
-         * Process the CMS pages.
+         * Process the CMS pages scoped to the sitemap's channels.
          */
-        Page::query()->chunk(100, fn ($items) => $this->processItems($items));
+        Page::query()
+            ->whereHas('channels', fn ($query) => $query->whereIn('channel_id', $channelIds))
+            ->chunk(100, fn ($items) => $this->processItems($items));
 
         /**
          * If there are any items left to be processed then generate the sitemap.
@@ -97,12 +110,39 @@ class ProcessSitemap implements ShouldQueue
          */
         $this->sitemap->update([
             'generated_at' => now(),
-
+            
             'additional' => array_merge($this->sitemap->additional ?? [], [
                 'index' => $this->sitemap->index_file_name,
                 'sitemaps' => $this->generatedSitemaps,
             ]),
         ]);
+    }
+
+    /**
+     * Process categories under the given channels' root category subtrees.
+     */
+    protected function processCategories(array $channelIds): void
+    {
+        $rootCategoryIds = core()->getAllChannels()
+            ->whereIn('id', $channelIds)
+            ->pluck('root_category_id')
+            ->all();
+
+        $roots = Category::query()
+            ->whereIn('id', $rootCategoryIds)
+            ->get(['_lft', '_rgt']);
+
+        if ($roots->isEmpty()) {
+            return;
+        }
+
+        Category::query()
+            ->where(function ($query) use ($roots) {
+                foreach ($roots as $root) {
+                    $query->orWhereBetween('_lft', [$root->_lft + 1, $root->_rgt - 1]);
+                }
+            })
+            ->chunk(100, fn ($items) => $this->processItems($items));
     }
 
     /**

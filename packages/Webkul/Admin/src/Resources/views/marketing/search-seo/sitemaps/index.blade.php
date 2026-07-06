@@ -40,7 +40,7 @@
                 @if (bouncer()->hasPermission('marketing.search_seo.sitemaps.create'))
                     <div
                         class="primary-button"
-                        @click="selectedSitemap=0; $refs.sitemap.toggle()"
+                        @click="selectedSitemap=0; resetForm(); $refs.sitemap.toggle()"
                     >
                         @lang('admin::app.marketing.search-seo.sitemaps.index.create-btn')
                     </div>
@@ -74,6 +74,9 @@
                             <!-- ID -->
                             <p>@{{ record.id }}</p>
 
+                            <!-- Channel -->
+                            <p>@{{ record.channel }}</p>
+
                             <!-- File Name -->
                             <p>@{{ record.file_name }}</p>
 
@@ -90,7 +93,7 @@
                             <!-- Actions -->
                             <div class="flex justify-end">
                                 @if (bouncer()->hasPermission('marketing.search_seo.sitemaps.edit'))
-                                    <a @click="selectedSitemap=1; editModal(record)">
+                                    <a @click="selectedSitemap=1; editModal(record.actions.find(action => action.index === 'edit')?.url)">
                                         <span
                                             :class="record.actions.find(action => action.index === 'edit')?.icon"
                                             class="cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-100 dark:hover:bg-gray-950 max-sm:place-self-center"
@@ -199,6 +202,35 @@
                                     @lang('admin::app.marketing.search-seo.sitemaps.index.create.path-info')
                                 </p>
                             </x-admin::form.control-group>
+
+                            <!-- Select Channels -->
+                            <x-admin::form.control-group.label class="required">
+                                @lang('admin::app.marketing.search-seo.sitemaps.index.create.channels')
+                            </x-admin::form.control-group.label>
+
+                            @foreach (core()->getAllChannels() as $channel)
+                                <x-admin::form.control-group class="!mb-2 flex select-none items-center gap-2.5 last:!mb-0">
+                                    <x-admin::form.control-group.control
+                                        type="checkbox"
+                                        :id="'channels_' . $channel->id"
+                                        name="channels[]"
+                                        rules="required"
+                                        :value="(string) $channel->id"
+                                        :for="'channels_' . $channel->id"
+                                        :label="trans('admin::app.marketing.search-seo.sitemaps.index.create.channels')"
+                                    />
+
+                                    <label
+                                        class="cursor-pointer text-xs font-medium text-gray-600 dark:text-gray-300"
+                                        for="channels_{{ $channel->id }}"
+                                        v-pre
+                                    >
+                                        {{ core()->getChannelName($channel) }}
+                                    </label>
+                                </x-admin::form.control-group>
+                            @endforeach
+
+                            <x-admin::form.control-group.error control-name="channels[]" />
                         </x-slot>
 
                         <!-- Modal Footer -->
@@ -225,13 +257,15 @@
                     return {
                         selectedSitemap: 0,
 
+                        selectedChannels: [],
+
                         isLoading: false,
                     }
                 },
 
                 computed: {
                     gridsCount() {
-                        let count = this.$refs.datagrid.available.columns.length;
+                        let count = this.$refs.datagrid.available.columns.filter((column) => column.visibility).length;
 
                         if (this.$refs.datagrid.available.actions.length) {
                             ++count;
@@ -255,7 +289,7 @@
                             formData.append('_method', 'put');
                         }
 
-                        this.$axios.post(params.id ? "{{ route('admin.marketing.search_seo.sitemaps.update') }}" : "{{ route('admin.marketing.search_seo.sitemaps.store') }}", formData )
+                        this.$axios.post(params.id ? "{{ route('admin.marketing.search_seo.sitemaps.update') }}" : "{{ route('admin.marketing.search_seo.sitemaps.store') }}", formData)
                             .then((response) => {
                                 this.isLoading = false;
 
@@ -276,10 +310,27 @@
                             });
                     },
 
-                    editModal(values) {
-                        this.$refs.sitemap.toggle();
+                    editModal(url) {
+                        this.$axios.get(url)
+                            .then((response) => {
+                                this.selectedChannels = response.data.data.channels ?? [];
 
-                        this.$refs.modalForm.setValues(values);
+                                this.$refs.modalForm.setValues({
+                                    ...response.data.data,
+                                    'channels[]': this.selectedChannels.map(String),
+                                });
+
+                                this.$refs.sitemap.toggle();
+                            })
+                            .catch(error => {
+                                console.log(error);
+                            });
+                    },
+
+                    resetForm() {
+                        this.selectedChannels = [];
+
+                        this.$refs.modalForm.resetForm();
                     },
                 },
             })
