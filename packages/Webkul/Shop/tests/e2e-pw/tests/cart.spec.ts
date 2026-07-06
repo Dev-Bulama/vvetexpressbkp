@@ -44,6 +44,56 @@ test.describe("cart management", () => {
         await shopPage.waitForTimeout(CART_WAITING_TIME);
     });
 
+    test("should display bin icon in mini cart drawer", async ({
+        shopPage,
+    }) => {
+        const cartPage = new CartPage(shopPage);
+
+        await cartPage.gotoHome();
+        await cartPage.searchProduct("simple");
+        await cartPage.addFirstProductToCart();
+        await cartPage.openMiniCart();
+        await expect(shopPage.locator(".icon-bin")).toBeVisible();
+    });
+
+    test("should not display bin icon in mini cart drawer when quantity is greater then one", async ({
+        shopPage,
+    }) => {
+        const cartPage = new CartPage(shopPage);
+
+        await cartPage.gotoHome();
+        await cartPage.searchProduct("simple");
+        await cartPage.addFirstProductToCart();
+        await cartPage.expectItemAdded();
+        await cartPage.openMiniCart();
+
+        await cartPage.increaseQuantityFromMiniCart();
+        await shopPage.waitForTimeout(CART_WAITING_TIME);
+
+        await cartPage.increaseQuantityFromMiniCart();
+        await shopPage.waitForTimeout(CART_WAITING_TIME);
+
+        await expect(shopPage.locator(".icon-bin")).not.toBeVisible();
+    });
+
+    test("Should delete the cart item when clicking the bin icon", async ({
+        shopPage,
+    }) => {
+        const cartPage = new CartPage(shopPage);
+
+        await cartPage.gotoHome();
+        await cartPage.searchProduct("simple");
+        await cartPage.addFirstProductToCart();
+        await cartPage.openMiniCart();
+        await cartPage.clickBinIcon();
+
+        await expect(
+            shopPage
+                .getByText("Item is successfully removed from the cart.")
+                .first(),
+        ).toBeVisible();
+    });
+
     test("should decrease the quantity from the mini cart drawer", async ({
         shopPage,
     }) => {

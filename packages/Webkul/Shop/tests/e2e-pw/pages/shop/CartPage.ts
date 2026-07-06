@@ -47,7 +47,14 @@ export class CartPage extends BasePage {
     }
 
     async removeProductFromMiniCart(): Promise<void> {
-        await this.page.getByRole("button", { name: "Remove" }).click();
+        await this.page.getByRole("button", { name: "Remove" }).first().click();
+        await this.page
+            .getByRole("button", { name: "Agree", exact: true })
+            .click();
+    }
+
+    async clickBinIcon(): Promise<void> {
+        await this.page.locator(".icon-bin").click();
         await this.page
             .getByRole("button", { name: "Agree", exact: true })
             .click();
