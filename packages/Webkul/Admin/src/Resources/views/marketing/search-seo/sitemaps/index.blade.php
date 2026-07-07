@@ -40,7 +40,7 @@
                 @if (bouncer()->hasPermission('marketing.search_seo.sitemaps.create'))
                     <div
                         class="primary-button"
-                        @click="selectedSitemap=0; resetForm(); $refs.sitemap.toggle()"
+                        @click="selectedSitemap=0; resetForm(); $refs.sitemapUpdateOrCreateModal.toggle()"
                     >
                         @lang('admin::app.marketing.search-seo.sitemaps.index.create-btn')
                     </div>
@@ -130,10 +130,10 @@
                     @submit="handleSubmit($event, updateOrCreate)"
                     ref="sitemapCreateForm"
                 >
-                    <x-admin::modal ref="sitemap">
+                    <x-admin::modal ref="sitemapUpdateOrCreateModal">
                         <!-- Modal Header -->
                         <x-slot:header>
-                            <!-- Create Modal title -->
+                            <!-- Edit Modal title -->
                             <p
                                 class="text-lg font-bold text-gray-800 dark:text-white"
                                 v-if="selectedSitemap"
@@ -141,7 +141,7 @@
                                 @lang('admin::app.marketing.search-seo.sitemaps.index.edit.title')
                             </p>
 
-                            <!-- Edit Modal title -->
+                            <!-- Create Modal title -->
                             <p
                                 class="text-lg font-bold text-gray-800 dark:text-white"
                                 v-else
@@ -156,6 +156,7 @@
                             <x-admin::form.control-group.control
                                 type="hidden"
                                 name="id"
+                                v-model="sitemap.id"
                             />
 
                             <!-- File Name -->
@@ -168,7 +169,7 @@
                                     type="text"
                                     name="file_name"
                                     rules="required"
-                                    :value="old('file_name')"
+                                    v-model="sitemap.file_name"
                                     :label="trans('admin::app.marketing.search-seo.sitemaps.index.create.file-name')"
                                     :placeholder="trans('admin::app.marketing.search-seo.sitemaps.index.create.file-name')"
                                 />
@@ -191,7 +192,7 @@
                                     type="text"
                                     name="path"
                                     rules="required"
-                                    :value="old('path')"
+                                    v-model="sitemap.path"
                                     :label="trans('admin::app.marketing.search-seo.sitemaps.index.create.path')"
                                     :placeholder="trans('admin::app.marketing.search-seo.sitemaps.index.create.path')"
                                 />
@@ -216,6 +217,7 @@
                                         name="channels[]"
                                         rules="required"
                                         :value="(string) $channel->id"
+                                        v-model="sitemap.channels"
                                         :for="'channels_' . $channel->id"
                                         :label="trans('admin::app.marketing.search-seo.sitemaps.index.create.channels')"
                                     />
@@ -255,9 +257,11 @@
 
                 data() {
                     return {
-                        selectedSitemap: 0,
+                        sitemap: {
+                            channels: [],
+                        },
 
-                        selectedChannels: [],
+                        selectedSitemap: 0,
 
                         isLoading: false,
                     }
@@ -293,9 +297,9 @@
                             .then((response) => {
                                 this.isLoading = false;
 
-                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+                                this.$refs.sitemapUpdateOrCreateModal.close();
 
-                                this.$refs.sitemap.toggle();
+                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
 
                                 this.$refs.datagrid.get();
 
@@ -313,14 +317,12 @@
                     editModal(url) {
                         this.$axios.get(url)
                             .then((response) => {
-                                this.selectedChannels = response.data.data.channels ?? [];
-
-                                this.$refs.modalForm.setValues({
+                                this.sitemap = {
                                     ...response.data.data,
-                                    'channels[]': this.selectedChannels.map(String),
-                                });
+                                    channels: (response.data.data.channels ?? []).map(String),
+                                };
 
-                                this.$refs.sitemap.toggle();
+                                this.$refs.sitemapUpdateOrCreateModal.toggle();
                             })
                             .catch(error => {
                                 console.log(error);
@@ -328,9 +330,9 @@
                     },
 
                     resetForm() {
-                        this.selectedChannels = [];
-
-                        this.$refs.modalForm.resetForm();
+                        this.sitemap = {
+                            channels: [],
+                        };
                     },
                 },
             })
