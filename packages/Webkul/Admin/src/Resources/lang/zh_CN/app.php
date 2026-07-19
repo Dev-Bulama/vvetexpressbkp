@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => '分类',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => '名称',
                 'permissions' => '权限',
                 'save-btn' => '保存角色',
+                'search-permissions' => '搜索权限',
                 'title' => '创建角色',
             ],
 

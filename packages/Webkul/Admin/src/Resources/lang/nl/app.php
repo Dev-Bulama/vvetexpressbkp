@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'Categorieën',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'Naam',
                 'permissions' => 'Machtigingen',
                 'save-btn' => 'Rol Opslaan',
+                'search-permissions' => 'Rechten zoeken',
                 'title' => 'Rol Aanmaken',
             ],
 

@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'Kategori',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'Nama',
                 'permissions' => 'Izin',
                 'save-btn' => 'Simpan Peran',
+                'search-permissions' => 'Cari izin',
                 'title' => 'Buat Peran',
             ],
 

@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'Категорії',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'Назва',
                 'permissions' => 'Дозволи',
                 'save-btn' => 'Зберегти роль',
+                'search-permissions' => 'Пошук дозволів',
                 'title' => 'Створити роль',
             ],
 

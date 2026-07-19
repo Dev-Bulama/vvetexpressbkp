@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'श्रेणियाँ',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'नाम',
                 'permissions' => 'अनुमति',
                 'save-btn' => 'भूमिका सहेजें',
+                'search-permissions' => 'अनुमतियाँ खोजें',
                 'title' => 'भूमिका बनाएँ',
             ],
 

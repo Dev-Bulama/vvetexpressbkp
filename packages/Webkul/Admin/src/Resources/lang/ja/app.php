@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'カテゴリー',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => '名前',
                 'permissions' => '権限',
                 'save-btn' => '役割を保存',
+                'search-permissions' => '権限を検索',
                 'title' => '役割を作成',
             ],
 

@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'دسته‌بندی‌ها',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'نام',
                 'permissions' => 'مجوزها',
                 'save-btn' => 'ذخیره نقش',
+                'search-permissions' => 'جستجوی مجوزها',
                 'title' => 'ایجاد نقش',
             ],
 

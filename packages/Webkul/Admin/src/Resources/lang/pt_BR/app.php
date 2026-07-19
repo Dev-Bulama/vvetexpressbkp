@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'Categorias',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'Nome',
                 'permissions' => 'Permissões',
                 'save-btn' => 'Salvar Função',
+                'search-permissions' => 'Pesquisar permissões',
                 'title' => 'Criar Função',
             ],
 

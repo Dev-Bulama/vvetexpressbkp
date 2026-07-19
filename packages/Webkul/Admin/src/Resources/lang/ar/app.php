@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'الفئات',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'الاسم',
                 'permissions' => 'الصلاحيات',
                 'save-btn' => 'حفظ الدور',
+                'search-permissions' => 'البحث في الصلاحيات',
                 'title' => 'إنشاء الدور',
             ],
 

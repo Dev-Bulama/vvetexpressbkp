@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'קטגוריות',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'שם',
                 'permissions' => 'הרשאות',
                 'save-btn' => 'שמור תפקיד',
+                'search-permissions' => 'חיפוש הרשאות',
                 'title' => 'יצירת תפקיד',
             ],
 

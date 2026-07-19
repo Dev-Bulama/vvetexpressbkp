@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'বিভাগসমূহ',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'নাম',
                 'permissions' => 'অনুমতিসমূহ',
                 'save-btn' => 'ভূমিকা সংরক্ষণ করুন',
+                'search-permissions' => 'অনুমতি খুঁজুন',
                 'title' => 'ভূমিকা তৈরি করুন',
             ],
 

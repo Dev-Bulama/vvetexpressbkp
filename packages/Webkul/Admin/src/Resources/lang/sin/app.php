@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'ප්‍රවර්ග',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'නම',
                 'permissions' => 'වෙනස්කරන්න',
                 'save-btn' => 'භූමිකා සුරක්ෂා කරන්න',
+                'search-permissions' => 'අවසර සොයන්න',
                 'title' => 'භූමිකාකරන්න',
             ],
 

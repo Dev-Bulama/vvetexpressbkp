@@ -1222,6 +1222,7 @@ return [
                 ],
 
                 'categories' => [
+                    'search' => 'Search categories',
                     'title' => 'Kategoriler',
                 ],
 
@@ -3822,6 +3823,7 @@ return [
                 'name' => 'Adı',
                 'permissions' => 'İzinler',
                 'save-btn' => 'Rolü Kaydet',
+                'search-permissions' => 'İzin ara',
                 'title' => 'Rol Oluştur',
             ],
 
