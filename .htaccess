@@ -1,0 +1,43 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine on
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<Files .env>
+  Order allow,deny
+  Deny from all
+</Files>
+
+<Files composer.json>
+  Order allow,deny
+  Deny from all
+</Files>
+
+<Files composer.lock>
+  Require all denied
+</Files>
+<Files package.json>
+  Require all denied
+</Files>
+<Files package-lock.json>
+  Require all denied
+</Files>
+<Files phpunit.xml>
+  Require all denied
+</Files>
+<Files artisan>
+  Require all denied
+</Files>
+<Files vite.config.js>
+  Require all denied
+</Files>
+<Files tailwind.config.js>
+  Require all denied
+</Files>
+<Files postcss.config.js>
+  Require all denied
+</Files>
+<FilesMatch "\.zip$">
+  Require all denied
+</FilesMatch>
