@@ -16,13 +16,13 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        // Create a user only on local
+        // Create demo users only on local
         if (app()->isLocal()) {
             $this->createRootUser();
             $this->createAdminUser();
             $this->createVisitorUser();
+            $this->demoCustomer();
         }
-        $this->demoCustomer();
     }
 
     private function createRootUser()

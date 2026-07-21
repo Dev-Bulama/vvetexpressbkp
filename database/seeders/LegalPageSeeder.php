@@ -13,37 +13,21 @@ class LegalPageSeeder extends Seeder
      */
     public function run(): void
     {
-        $faker = Factory::create();
-        // Legal Pages
         $legalPages = [
-            [
-                'title' => 'Privacy Policy',
-                'slug' => 'privacy-policy',
-                'description' => $faker->randomHtml(),
-            ],
-            [
-                'title' => 'Terms of Service',
-                'slug' => 'terms-and-conditions',
-                'description' => $faker->randomHtml(),
-            ],
-            [
-                'title' => 'Return policy / Refund Policy',
-                'slug' => 'return-and-refund-policy',
-                'description' => $faker->randomHtml(),
-            ],
-            [
-                'title' => 'Shipping & Delivery Policy',
-                'slug' => 'shipping-and-delivery-policy',
-                'description' => $faker->randomHtml(),
-            ],
-            [
-                'title' => 'About Us',
-                'slug' => 'about-us',
-                'description' => $faker->randomHtml(4, rand(4, 10)),
-            ],
+            ['title' => 'Privacy Policy', 'slug' => 'privacy-policy'],
+            ['title' => 'Terms of Service', 'slug' => 'terms-and-conditions'],
+            ['title' => 'Return policy / Refund Policy', 'slug' => 'return-and-refund-policy'],
+            ['title' => 'Shipping & Delivery Policy', 'slug' => 'shipping-and-delivery-policy'],
+            ['title' => 'About Us', 'slug' => 'about-us'],
         ];
 
+        $placeholder = '<p>Please update this page from the admin panel.</p>';
+
         foreach ($legalPages as $legalPage) {
+            $legalPage['description'] = app()->environment('local')
+                ? Factory::create()->randomHtml()
+                : $placeholder;
+
             LegalPage::create($legalPage);
         }
     }
