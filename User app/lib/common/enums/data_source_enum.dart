@@ -1,1 +1,0 @@
-enum DataSourceEnum {client, local}
