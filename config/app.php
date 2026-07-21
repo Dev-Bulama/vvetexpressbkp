@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Facade;
-use Illuminate\Support\ServiceProvider;
-
 return [
 
     /*
@@ -16,10 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
-
-    // app version
-    'version' => env('APP_VERSION', '1.0'),
+    'name' => env('APP_NAME', 'Bagisto'),
 
     /*
     |--------------------------------------------------------------------------
@@ -28,7 +22,7 @@ return [
     |
     | This value determines the "environment" your application is currently
     | running in. This may determine how you prefer to configure various
-    | services the application utilizes. Set this in your ".env" file.
+    | services your application utilizes. Set this in your ".env" file.
     |
     */
 
@@ -45,7 +39,19 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => env('APP_DEBUG', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Debug Allowed IPs
+    |--------------------------------------------------------------------------
+    |
+    | This value is used to allow the debug mode only for the specified IPs.
+    | This is useful when you want to debug the application on the production
+    | server without enabling it for everyone.
+    */
+
+    'debug_allowed_ips' => env('APP_DEBUG_ALLOWED_IPS', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -60,15 +66,17 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'asset_url' => env('ASSET_URL'),
+    /*
+    |--------------------------------------------------------------------------
+    | Application Admin URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL suffix is used to define the admin url for example
+    | admin/ or backend/
+    |
+    */
 
-    'mail_mailer' => (string) env('MAIL_MAILER'),
-    'mail_host' => (string) env('MAIL_HOST'),
-    'mail_port' => (string) env('MAIL_PORT'),
-    'mail_username' => (string) env('MAIL_USERNAME'),
-    'mail_password' => (string) env('MAIL_PASSWORD'),
-    'mail_encryption' => (string) env('MAIL_ENCRYPTION'),
-    'mail_from_address' => (string) env('MAIL_FROM_ADDRESS'),
+    'admin_url' => env('APP_ADMIN_URL', 'admin'),
 
     /*
     |--------------------------------------------------------------------------
@@ -81,7 +89,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => env('APP_TIMEZONE', 'Asia/Kolkata'),
 
     /*
     |--------------------------------------------------------------------------
@@ -95,50 +103,68 @@ return [
     */
 
     'locale' => env('APP_LOCALE', 'en'),
-    'demo_email' => env('DEMO_EMAIL'),
-    'demo_shop_email' => env('DEMO_SHOP_EMAIL'),
-    'demo_password' => env('DEMO_PASSWORD'),
+
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+
+    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*
     |--------------------------------------------------------------------------
-    | Application Fallback Locale
+    | Default Country
     |--------------------------------------------------------------------------
     |
-    | The fallback locale determines the locale to use when the current one
-    | is not available. You may change the value to correspond to any of
-    | the language folders that are provided through your application.
+    | Here you may specify the default country by country code.
+    | Ensure it is uppercase and reflects the 'code' column of the
+    | countries table.
     |
+    | for example: DE EN FR
+    | (use capital letters!)
     */
 
-    'fallback_locale' => 'en',
+    'default_country' => null,
 
     /*
     |--------------------------------------------------------------------------
-    | Faker Locale
+    | Base Currency Code
     |--------------------------------------------------------------------------
     |
-    | This locale will be used by the Faker PHP library when generating fake
-    | data for your database seeds. For example, this will be used to get
-    | localized telephone numbers, street address information and more.
+    | Here you may specify the base currency code for your application.
     |
     */
 
-    'faker_locale' => 'en_US',
+    'currency' => env('APP_CURRENCY', 'USD'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default channel Code
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify the default channel code for your application.
+    |
+    */
+
+    'channel' => 'default',
 
     /*
     |--------------------------------------------------------------------------
     | Encryption Key
     |--------------------------------------------------------------------------
     |
-    | This key is used by the Illuminate encrypted service and should be set
+    | This key is used by the Illuminate encrypter service and should be set
     | to a random, 32 character string, otherwise these encrypted strings
     | will not be safe. Please do this before deploying an application!
     |
     */
 
+    'cipher' => 'AES-256-CBC',
+
     'key' => env('APP_KEY'),
 
-    'cipher' => 'AES-256-CBC',
+    'previous_keys' => [
+        ...array_filter(
+            explode(',', env('APP_PREVIOUS_KEYS', ''))
+        ),
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -154,54 +180,8 @@ return [
     */
 
     'maintenance' => [
-        'driver' => 'file',
-        // 'store' => 'redis',
+        'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
+        'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Autoloaded Service Providers
-    |--------------------------------------------------------------------------
-    |
-    | The service providers listed here will be automatically loaded on the
-    | request to your application. Feel free to add your own services to
-    | this array to grant expanded functionality to your applications.
-    |
-    */
-
-    'providers' => ServiceProvider::defaultProviders()->merge([
-        /*
-         * Package Service Providers...
-         */
-        Milon\Barcode\BarcodeServiceProvider::class,
-
-        /*
-         * Application Service Providers...
-         */
-        App\Providers\AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
-        App\Providers\EventServiceProvider::class,
-        App\Providers\RouteServiceProvider::class,
-        App\Providers\SmsServiceProvider::class,
-        App\Providers\PermissionServiceProvider::class,
-
-    ])->toArray(),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Class Aliases
-    |--------------------------------------------------------------------------
-    |
-    | This array of class aliases will be registered when this application
-    | is started. However, feel free to register as many as you wish as
-    | the aliases are "lazy" loaded so they don't hinder performance.
-    |
-    */
-
-    'aliases' => Facade::defaultAliases()->merge([
-        'DNS1D' => Milon\Barcode\Facades\DNS1DFacade::class,
-        'DNS2D' => Milon\Barcode\Facades\DNS2DFacade::class,
-    ])->toArray(),
 
 ];

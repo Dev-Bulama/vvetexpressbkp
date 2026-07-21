@@ -2,18 +2,11 @@
 
 namespace App\Providers;
 
-use App\Enums\OrderStatus;
-use App\Enums\Roles;
-use App\Models\GeneraleSetting;
-use App\Models\Order;
-use App\Models\User;
-use App\Repositories\LanguageRepository;
-use App\Repositories\ThemeColorRepository;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Schema;
+use Barryvdh\Debugbar\Facades\Debugbar;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\ParallelTesting;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,7 +15,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $allowedIPs = array_map('trim', explode(',', config('app.debug_allowed_ips', '')));
+
+        $allowedIPs = array_filter($allowedIPs);
+
+        if (empty($allowedIPs)) {
+            return;
+        }
+
+        if (in_array(Request::ip(), $allowedIPs)) {
+            Debugbar::enable();
+        } else {
+            Debugbar::disable();
+        }
     }
 
     /**
@@ -30,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Schema::defaultStringLength(191);
+        ParallelTesting::setUpTestDatabase(function (string $database, int $token) {
+            Artisan::call('db:seed');
+        });
     }
 }

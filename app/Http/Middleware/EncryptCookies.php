@@ -9,9 +9,10 @@ class EncryptCookies extends Middleware
     /**
      * The names of the cookies that should not be encrypted.
      *
-     * @var array<int, string>
+     * @var array
      */
     protected $except = [
-        'theme_name'
+        'sidebar_collapsed',
+        'dark_mode',
     ];
 }
