@@ -1,6 +1,7 @@
 <?php
 
 use Webkul\Customer\Models\Customer;
+use Webkul\Marketplace\Models\Seller;
 use Webkul\User\Models\Admin;
 
 return [
@@ -48,6 +49,11 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+
+        'seller' => [
+            'driver' => 'session',
+            'provider' => 'sellers',
+        ],
     ],
 
     /*
@@ -76,6 +82,11 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => Admin::class,
+        ],
+
+        'sellers' => [
+            'driver' => 'eloquent',
+            'model' => Seller::class,
         ],
     ],
 
@@ -109,6 +120,13 @@ return [
         'admins' => [
             'provider' => 'admins',
             'table' => 'admin_password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'sellers' => [
+            'provider' => 'sellers',
+            'table' => 'seller_password_resets',
             'expire' => 60,
             'throttle' => 60,
         ],

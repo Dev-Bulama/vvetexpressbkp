@@ -23,6 +23,7 @@ use Webkul\Installer\Providers\InstallerServiceProvider;
 use Webkul\Inventory\Providers\InventoryServiceProvider;
 use Webkul\MagicAI\Providers\MagicAIServiceProvider;
 use Webkul\Marketing\Providers\MarketingServiceProvider;
+use Webkul\Marketplace\Providers\MarketplaceServiceProvider;
 use Webkul\Notification\Providers\NotificationServiceProvider;
 use Webkul\Payment\Providers\PaymentServiceProvider;
 use Webkul\Paypal\Providers\PaypalServiceProvider;
@@ -74,6 +75,7 @@ return [
     InventoryServiceProvider::class,
     MagicAIServiceProvider::class,
     MarketingServiceProvider::class,
+    MarketplaceServiceProvider::class,
     NotificationServiceProvider::class,
     PayUServiceProvider::class,
     PaymentServiceProvider::class,
