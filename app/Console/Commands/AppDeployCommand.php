@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
-use Spatie\Permission\Models\Role;
 use Throwable;
 
 class AppDeployCommand extends Command
@@ -47,6 +46,7 @@ class AppDeployCommand extends Command
             if ($this->option('seed') || ! $this->essentialDataAlreadySeeded()) {
                 $this->info('Seeding essential system data...');
                 Artisan::call('db:seed', ['--force' => true], $this->output);
+                File::put($this->seedMarkerPath(), now()->toDateTimeString());
             } else {
                 $this->info('Essential data already present, skipping seeders (use --seed to force).');
             }
@@ -85,10 +85,11 @@ class AppDeployCommand extends Command
 
     private function essentialDataAlreadySeeded(): bool
     {
-        try {
-            return Role::query()->exists();
-        } catch (Throwable) {
-            return false;
-        }
+        return File::exists($this->seedMarkerPath());
+    }
+
+    private function seedMarkerPath(): string
+    {
+        return storage_path('app/.essential_seeded');
     }
 }
