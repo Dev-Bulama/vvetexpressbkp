@@ -57,6 +57,14 @@ class DatabaseSeeder extends Seeder
 
     private function userInfo()
     {
+        if (! app()->environment('local')) {
+            $this->command->line('');
+            $this->command->info('No default administrator was created in this environment.');
+            $this->command->info('Run "php artisan admin:create" to create the first administrator.');
+
+            return;
+        }
+
         // info for root user in command line
         $this->command->line('');
         $this->command->info('Root user created:');
@@ -64,16 +72,14 @@ class DatabaseSeeder extends Seeder
         $this->command->warn('- Password: secret');
         $this->command->info('');
 
-        if (app()->environment('local')) {
-            // info for shop user in command line
-            $this->command->info('Demo Shop created:');
-            $this->command->warn('- Email: shop@readygrocery.com');
-            $this->command->warn('- Password: secret');
+        // info for shop user in command line
+        $this->command->info('Demo Shop created:');
+        $this->command->warn('- Email: shop@readygrocery.com');
+        $this->command->warn('- Password: secret');
 
-            // info for rider user in command line
-            $this->command->info('Rider created:');
-            $this->command->warn('- Email: rider@readygrocery.com');
-            $this->command->warn('- Password: secret');
-        }
+        // info for rider user in command line
+        $this->command->info('Rider created:');
+        $this->command->warn('- Email: rider@readygrocery.com');
+        $this->command->warn('- Password: secret');
     }
 }

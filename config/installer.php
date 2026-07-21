@@ -48,8 +48,8 @@ return [
     |
     */
     'permissions' => [
-        'storage/' => 777,
-        'bootstrap/' => 777,
+        'storage/' => 775,
+        'bootstrap/' => 775,
         'app/Providers/' => 775,
         'routes/' => 775,
         'lang/' => 775,
@@ -138,20 +138,6 @@ return [
         'Database Password',
         'Database Hostname',
         'Database Port',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Applications User access
-    |--------------------------------------------------------------------------
-    */
-    'users' => [
-        'root' => [
-            'name' => 'Joynal Abedin',
-            'email' => 'abedin.dev@gmail.com',
-            'password' => 'secret',
-            'email_verified_at' => now(),
-        ],
     ],
 
     /*
