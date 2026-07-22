@@ -8,6 +8,12 @@ use Webkul\Category\Models\Category;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Models\Channel;
 use Webkul\Core\Models\CoreConfig;
+use Webkul\Marketplace\Logistics\Adapters\InternalMarketplaceProvider;
+use Webkul\Marketplace\Logistics\Adapters\NullProvider;
+use Webkul\Marketplace\Models\DeliveryAgent;
+use Webkul\Marketplace\Models\DeliveryAgentVehicle;
+use Webkul\Marketplace\Models\LogisticsProvider;
+use Webkul\Marketplace\Models\LogisticsServiceType;
 use Webkul\Marketplace\Models\Seller;
 use Webkul\Marketplace\Models\SellerProduct;
 use Webkul\Product\Helpers\Indexers\Flat as FlatIndexer;
@@ -120,6 +126,8 @@ class VetMarketplaceDemoSeeder extends Seeder
         $this->seedOffers($sellerIds, $productIds);
 
         $this->seedFlashDeals($productRepository, $productIds);
+
+        $this->seedLogistics();
 
         $this->command?->info('Vet marketplace demo data seeded: '.count($categoryIds).' categories, '.count($productIds).' products, '.count($sellerIds).' vendors.');
     }
@@ -422,6 +430,102 @@ class VetMarketplaceDemoSeeder extends Seeder
             if ($cheapestOffer && (float) $cheapestOffer->price > $specialPrice) {
                 $cheapestOffer->update(['price' => $specialPrice]);
             }
+        }
+    }
+
+    /**
+     * One real, working internal delivery provider (our own riders) plus a
+     * disabled third-party example, so the "Choose a Delivery Service"
+     * checkout step and the logistics admin have something genuine to show
+     * without fabricating a connected courier integration that doesn't
+     * exist. base_fee/fee_per_km mirror the heuristic already used for the
+     * per-vendor delivery-fee estimate shown on the product page.
+     */
+    protected function seedLogistics(): void
+    {
+        $internalProvider = LogisticsProvider::firstOrCreate(
+            ['code' => 'internal-marketplace'],
+            [
+                'name' => 'VetExpress Riders',
+                'type' => LogisticsProvider::TYPE_INTERNAL,
+                'adapter_class' => InternalMarketplaceProvider::class,
+                'is_active' => true,
+                'base_fee' => 500,
+                'fee_per_km' => 150,
+                'max_distance_km' => 40,
+                'commission_percent' => 10,
+                'rating' => 4.6,
+            ]
+        );
+
+        LogisticsProvider::firstOrCreate(
+            ['code' => 'third-party-courier'],
+            [
+                'name' => 'Third-Party Courier (not yet connected)',
+                'type' => LogisticsProvider::TYPE_THIRD_PARTY,
+                'adapter_class' => NullProvider::class,
+                'is_active' => false,
+                'base_fee' => 0,
+                'fee_per_km' => 0,
+                'commission_percent' => 0,
+                'rating' => 0,
+            ]
+        );
+
+        $serviceTypes = [
+            ['code' => 'standard', 'name' => 'Standard Delivery', 'vehicle_type' => 'motorcycle', 'pickup_minutes' => 20, 'base_fee' => 500, 'fee_per_km' => 150],
+            ['code' => 'express', 'name' => 'Express Delivery', 'vehicle_type' => 'motorcycle', 'pickup_minutes' => 10, 'base_fee' => 900, 'fee_per_km' => 220],
+            ['code' => 'van', 'name' => 'Van Delivery (bulk orders)', 'vehicle_type' => 'van', 'pickup_minutes' => 30, 'base_fee' => 1500, 'fee_per_km' => 300],
+        ];
+
+        foreach ($serviceTypes as $serviceType) {
+            LogisticsServiceType::firstOrCreate(
+                ['logistics_provider_id' => $internalProvider->id, 'code' => $serviceType['code']],
+                [
+                    'name' => $serviceType['name'],
+                    'vehicle_type' => $serviceType['vehicle_type'],
+                    'description' => $serviceType['name'].' by a VetExpress rider.',
+                    'tracking_available' => true,
+                    'estimated_pickup_minutes' => $serviceType['pickup_minutes'],
+                    'base_fee' => $serviceType['base_fee'],
+                    'fee_per_km' => $serviceType['fee_per_km'],
+                    'is_active' => true,
+                ]
+            );
+        }
+
+        $agents = [
+            ['Tunde Bakare', 'tunde.rider@vetexpress.ng', 6.6018, 3.3515, 'motorcycle', 'ABJ-421-KJ'],
+            ['Halima Bello', 'halima.rider@vetexpress.ng', 6.5703, 3.3660, 'motorcycle', 'LND-118-XA'],
+            ['Chuka Obi', 'chuka.rider@vetexpress.ng', 6.4432, 3.3592, 'van', 'VAN-207-EE'],
+        ];
+
+        foreach ($agents as [$name, $email, $lat, $lng, $vehicleType, $plate]) {
+            if (DeliveryAgent::where('email', $email)->exists()) {
+                continue;
+            }
+
+            $vehicle = DeliveryAgentVehicle::create([
+                'type' => $vehicleType,
+                'plate_number' => $plate,
+                'model' => $vehicleType === 'van' ? 'Toyota Hiace' : 'Bajaj Boxer',
+                'color' => 'White',
+            ]);
+
+            DeliveryAgent::create([
+                'logistics_provider_id' => $internalProvider->id,
+                'vehicle_id' => $vehicle->id,
+                'name' => $name,
+                'email' => $email,
+                'password' => 'TestRider123!',
+                'phone' => '+234 800 000 0000',
+                'status' => DeliveryAgent::STATUS_AVAILABLE,
+                'current_latitude' => $lat,
+                'current_longitude' => $lng,
+                'last_location_at' => now(),
+                'rating' => 4.7,
+                'is_active' => true,
+            ]);
         }
     }
 }
