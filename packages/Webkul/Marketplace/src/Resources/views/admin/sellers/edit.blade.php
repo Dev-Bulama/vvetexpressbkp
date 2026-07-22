@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; }
-        header { background: #0f172a; color: #fff; padding: 16px 24px; }
+        header { background: #11455B; color: #fff; padding: 16px 24px; }
         main { max-width: 600px; margin: 24px auto; padding: 0 16px; }
         .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
         dl { display: grid; grid-template-columns: 140px 1fr; row-gap: 10px; font-size: 14px; }
@@ -17,11 +17,11 @@
         .badge.suspended { background: #fee2e2; color: #991b1b; }
         .actions { margin-top: 24px; display: flex; gap: 10px; }
         button { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        button.approve { background: #16a34a; color: #fff; }
+        button.approve { background: #2FCB6E; color: #fff; }
         button.suspend { background: #dc2626; color: #fff; }
         button.pending { background: #ca8a04; color: #fff; }
         .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; background: #dcfce7; color: #166534; }
-        a.back { color: #16a34a; text-decoration: none; font-size: 13px; }
+        a.back { color: #2FCB6E; text-decoration: none; font-size: 13px; }
     </style>
 </head>
 <body>

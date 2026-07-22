@@ -4,6 +4,7 @@ module.exports = {
         "./src/Resources/**/*.blade.php",
         "./src/Resources/**/*.js",
         "../../../resources/views/vendor/shop/**/*.blade.php",
+        "../Marketplace/src/Resources/views/**/*.blade.php",
     ],
 
     theme: {
@@ -33,11 +34,13 @@ module.exports = {
 
         extend: {
             colors: {
-                navyBlue: "#060C3B",
+                navyBlue: "#11455B",
                 lightOrange: "#F6F2EB",
                 darkGreen: '#40994A',
                 darkBlue: '#0044F2',
                 darkPink: '#F85156',
+                brandNavy: '#11455B',
+                brandGreen: '#2FCB6E',
             },
 
             fontFamily: {

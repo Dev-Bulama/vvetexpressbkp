@@ -1,53 +1,52 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Seller Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; }
-        header { background: #0f172a; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-        main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
-        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
-        th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
-        th { background: #f8fafc; }
-        form.logout button { background: none; border: none; color: #fff; cursor: pointer; font-size: 14px; }
-        .empty { padding: 24px; text-align: center; color: #6b7280; background: #fff; border-radius: 8px; }
-    </style>
-</head>
-<body>
-    <header>
-        <div>{{ $seller->shop_name }} &middot; <span style="opacity:.7">{{ ucfirst($seller->status) }}</span></div>
-        <form class="logout" method="POST" action="{{ route('marketplace.seller.session.destroy') }}">
-            @csrf
-            <button type="submit">Log out</button>
-        </form>
-    </header>
+@include('marketplace::seller.partials.shell-start', ['title' => 'Dashboard', 'heading' => 'Dashboard', 'active' => 'dashboard'])
 
-    <main>
-        <h2>Your Products</h2>
+<style>
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+    th { background: #f8fafc; color: #6b7280; font-weight: 600; font-size: 12px; text-transform: uppercase; }
+    .empty { padding: 24px; text-align: center; color: #6b7280; background: #fff; border-radius: 12px; }
+    .section-title { font-size: 15px; font-weight: 600; margin: 24px 0 10px; }
+</style>
 
-        @if ($products->isEmpty())
-            <div class="empty">No products listed yet.</div>
-        @else
-            <table>
-                <thead>
-                    <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    @foreach ($products as $offer)
-                        <tr>
-                            <td>{{ $offer->product?->name ?? $offer->product?->sku }}</td>
-                            <td>{{ $offer->price }}</td>
-                            <td>{{ $offer->quantity }}</td>
-                            <td>{{ $offer->is_active ? 'Active' : 'Inactive' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="label">Today's Sales</div>
+        <div class="value">{{ core()->formatPrice($todaysSales) }}</div>
+    </div>
 
-            {{ $products->links() }}
-        @endif
-    </main>
-</body>
-</html>
+    <div class="stat-card">
+        <div class="label">Products Listed</div>
+        <div class="value">{{ $products->total() }}</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="label">Low Stock (&le;5)</div>
+        <div class="value">{{ $lowStockCount }}</div>
+    </div>
+</div>
+
+<p class="section-title">Your Products</p>
+
+@if ($products->isEmpty())
+    <div class="empty">No products listed yet. <a href="{{ route('marketplace.seller.products.create') }}" style="color:#2FCB6E;">Add your first offer &rsaquo;</a></div>
+@else
+    <table>
+        <thead>
+            <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            @foreach ($products as $offer)
+                <tr>
+                    <td>{{ $offer->product?->name ?? $offer->product?->sku }}</td>
+                    <td>{{ core()->formatPrice($offer->price) }}</td>
+                    <td>{{ $offer->quantity }}</td>
+                    <td>{{ $offer->is_active ? 'Active' : 'Inactive' }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div style="margin-top:16px;">{{ $products->links() }}</div>
+@endif
+
+@include('marketplace::seller.partials.shell-end')

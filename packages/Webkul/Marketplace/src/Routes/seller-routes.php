@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Webkul\Marketplace\Http\Controllers\SellerDashboardController;
+use Webkul\Marketplace\Http\Controllers\SellerPosController;
 use Webkul\Marketplace\Http\Controllers\SellerProductController;
 use Webkul\Marketplace\Http\Controllers\SellerRegistrationController;
 use Webkul\Marketplace\Http\Controllers\SellerSessionController;
@@ -20,6 +21,11 @@ Route::prefix('seller')->group(function () {
 
     Route::middleware('seller')->group(function () {
         Route::get('dashboard', [SellerDashboardController::class, 'index'])->name('marketplace.seller.dashboard.index');
+
+        Route::controller(SellerPosController::class)->prefix('pos')->group(function () {
+            Route::get('', 'index')->name('marketplace.seller.pos.index');
+            Route::post('charge', 'charge')->name('marketplace.seller.pos.charge');
+        });
 
         Route::controller(SellerProductController::class)->prefix('products')->group(function () {
             Route::get('', 'index')->name('marketplace.seller.products.index');

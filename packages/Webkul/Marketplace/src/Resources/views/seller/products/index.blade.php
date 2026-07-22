@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; }
-        header { background: #0f172a; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-        header a.button { background: #16a34a; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+        header { background: #11455B; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        header a.button { background: #2FCB6E; color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; }
         main { max-width: 900px; margin: 24px auto; padding: 0 16px; }
         table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
         th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
@@ -16,7 +16,7 @@
         .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
         .msg.success { background: #dcfce7; color: #166534; }
         .msg.error { background: #fee2e2; color: #991b1b; }
-        a.edit { color: #16a34a; text-decoration: none; margin-right: 10px; }
+        a.edit { color: #2FCB6E; text-decoration: none; margin-right: 10px; }
         button.delete { background: none; border: none; color: #dc2626; cursor: pointer; font-size: 14px; padding: 0; }
     </style>
 </head>

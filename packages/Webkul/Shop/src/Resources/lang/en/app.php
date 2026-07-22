@@ -555,6 +555,13 @@ return [
 
         'layouts' => [
             'header' => [
+                'utility' => [
+                    'sell' => 'Sell on our marketplace',
+                    'help' => 'Help',
+                    'track-order' => 'Track Order',
+                    'deliver-to' => 'Deliver to',
+                ],
+
                 'desktop' => [
                     'top' => [
                         'default-locale' => 'Default locale',

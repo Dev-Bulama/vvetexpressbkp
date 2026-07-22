@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; }
-        header { background: #0f172a; color: #fff; padding: 16px 24px; }
+        header { background: #11455B; color: #fff; padding: 16px 24px; }
         main { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
         .tabs { margin-bottom: 16px; }
         .tabs a { display: inline-block; padding: 6px 14px; border-radius: 999px; font-size: 13px; text-decoration: none; color: #374151; background: #e5e7eb; margin-right: 8px; }
-        .tabs a.active { background: #0f172a; color: #fff; }
+        .tabs a.active { background: #11455B; color: #fff; }
         table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
         th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
         th { background: #f8fafc; }
@@ -19,7 +19,7 @@
         .badge.approved { background: #dcfce7; color: #166534; }
         .badge.suspended { background: #fee2e2; color: #991b1b; }
         .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; background: #dcfce7; color: #166534; }
-        a.view { color: #16a34a; text-decoration: none; }
+        a.view { color: #2FCB6E; text-decoration: none; }
         .empty { padding: 24px; text-align: center; color: #6b7280; background: #fff; border-radius: 8px; }
     </style>
 </head>

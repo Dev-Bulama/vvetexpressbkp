@@ -3,11 +3,11 @@
 @endphp
 
 @if ($offers->isNotEmpty())
-    <div class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
-        <p class="font-medium text-emerald-800">
+    <div class="mt-3 rounded-lg border border-brandGreen/30 bg-brandGreen/10 px-4 py-3 text-sm">
+        <p class="font-medium text-brandNavy">
             Available from {{ $offers->count() }} {{ Str::plural('vendor', $offers->count()) }} near you
         </p>
-        <p class="mt-0.5 text-emerald-700">
+        <p class="mt-0.5 text-brandGreen">
             From {{ core()->formatPrice($offers->min('price')) }} &middot; best offer: {{ $offers->first()->shop_name }}
         </p>
     </div>

@@ -10,11 +10,11 @@
         h1 { font-size: 22px; margin: 0 0 24px; }
         label { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 4px; }
         input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
-        button { width: 100%; margin-top: 24px; padding: 12px; background: #16a34a; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        button { width: 100%; margin-top: 24px; padding: 12px; background: #2FCB6E; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
         .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
         .msg.error { background: #fee2e2; color: #991b1b; }
         .msg.warning { background: #fef9c3; color: #854d0e; }
-        a { color: #16a34a; }
+        a { color: #2FCB6E; }
     </style>
 </head>
 <body>

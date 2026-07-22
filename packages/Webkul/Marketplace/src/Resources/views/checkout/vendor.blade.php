@@ -8,13 +8,13 @@
     <div class="mx-auto max-w-[1100px] px-4 py-8">
         {{-- Stepper --}}
         <div class="mb-8 flex items-center justify-center gap-4 text-sm">
-            <div class="flex items-center gap-2 text-emerald-700">
-                <span class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-emerald-600 bg-emerald-600 text-white">&#10003;</span>
+            <div class="flex items-center gap-2 text-brandNavy">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-brandGreen bg-brandGreen text-white">&#10003;</span>
                 <span class="font-medium">Cart</span>
             </div>
-            <div class="h-px w-16 bg-emerald-600"></div>
-            <div class="flex items-center gap-2 text-emerald-700">
-                <span class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-emerald-600 bg-emerald-600 text-white">2</span>
+            <div class="h-px w-16 bg-brandGreen"></div>
+            <div class="flex items-center gap-2 text-brandNavy">
+                <span class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-brandGreen bg-brandGreen text-white">2</span>
                 <span class="font-medium">Delivery &amp; Vendor</span>
             </div>
             <div class="h-px w-16 bg-slate-200"></div>
@@ -40,7 +40,7 @@
                         <button
                             type="button"
                             id="use-my-location"
-                            class="rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+                            class="rounded-lg border border-brandGreen px-3 py-1.5 text-xs font-semibold text-brandNavy hover:bg-brandGreen/5"
                         >
                             Use my location
                         </button>
@@ -75,13 +75,13 @@
                             @else
                                 <div class="space-y-3">
                                     @foreach ($row['offers'] as $offer)
-                                        <label class="flex cursor-pointer items-center justify-between rounded-xl border p-4 transition {{ (int) $row['selected_seller_id'] === (int) $offer->seller_id ? 'border-emerald-600 ring-1 ring-emerald-600' : 'border-slate-200 hover:border-slate-300' }}">
+                                        <label class="flex cursor-pointer items-center justify-between rounded-xl border p-4 transition {{ (int) $row['selected_seller_id'] === (int) $offer->seller_id ? 'border-brandGreen ring-1 ring-brandGreen' : 'border-slate-200 hover:border-slate-300' }}">
                                             <div class="flex items-center gap-3">
                                                 <input
                                                     type="radio"
                                                     name="vendor[{{ $row['cart_item']->product_id }}]"
                                                     value="{{ $offer->seller_id }}"
-                                                    class="h-4 w-4 accent-emerald-600"
+                                                    class="h-4 w-4 accent-brandGreen"
                                                     {{ (int) $row['selected_seller_id'] === (int) $offer->seller_id ? 'checked' : '' }}
                                                 >
 
@@ -90,7 +90,7 @@
                                                         <span class="font-medium text-slate-800">{{ $offer->shop_name }}</span>
 
                                                         @if ($loop->first && $sort === 'recommended')
-                                                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Recommended</span>
+                                                            <span class="rounded-full bg-brandGreen/10 px-2 py-0.5 text-[11px] font-semibold text-brandNavy">Recommended</span>
                                                         @endif
                                                     </div>
 
@@ -119,7 +119,7 @@
                     <button
                         type="submit"
                         {{ $allSelectable ? '' : 'disabled' }}
-                        class="w-full rounded-xl bg-emerald-700 py-3 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        class="w-full rounded-xl bg-brandGreen py-3 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
                         Continue to Payment
                     </button>
