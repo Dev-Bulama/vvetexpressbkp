@@ -8,15 +8,15 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Webkul\Marketplace\Models\Delivery;
+use Webkul\Marketplace\Models\DeliveryAgentLocation;
 
-class DeliveryStatusChanged implements ShouldBroadcast
+class AgentLocationUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets;
 
     public function __construct(
         public readonly Delivery $delivery,
-        public readonly ?string $fromStatus,
-        public readonly string $toStatus,
+        public readonly DeliveryAgentLocation $location,
     ) {}
 
     /**
@@ -32,7 +32,7 @@ class DeliveryStatusChanged implements ShouldBroadcast
 
     public function broadcastAs(): string
     {
-        return 'delivery.status-changed';
+        return 'delivery.location-updated';
     }
 
     /**
@@ -42,16 +42,12 @@ class DeliveryStatusChanged implements ShouldBroadcast
     {
         return [
             'delivery_id' => $this->delivery->id,
-            'order_id' => $this->delivery->order_id,
-            'from_status' => $this->fromStatus,
-            'to_status' => $this->toStatus,
-            'agent' => $this->delivery->agent ? [
-                'id' => $this->delivery->agent->id,
-                'name' => $this->delivery->agent->name,
-                'latitude' => $this->delivery->agent->current_latitude,
-                'longitude' => $this->delivery->agent->current_longitude,
-            ] : null,
-            'updated_at' => now()->toIso8601String(),
+            'latitude' => (float) $this->location->latitude,
+            'longitude' => (float) $this->location->longitude,
+            'heading_degrees' => $this->location->heading_degrees !== null ? (float) $this->location->heading_degrees : null,
+            'speed_kph' => $this->location->speed_kph !== null ? (float) $this->location->speed_kph : null,
+            'accuracy_meters' => $this->location->accuracy_meters !== null ? (float) $this->location->accuracy_meters : null,
+            'recorded_at' => $this->location->recorded_at->toIso8601String(),
         ];
     }
 }

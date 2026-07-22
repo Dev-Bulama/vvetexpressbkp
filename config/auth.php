@@ -1,6 +1,7 @@
 <?php
 
 use Webkul\Customer\Models\Customer;
+use Webkul\Marketplace\Models\DeliveryAgent;
 use Webkul\Marketplace\Models\Seller;
 use Webkul\User\Models\Admin;
 
@@ -54,6 +55,11 @@ return [
             'driver' => 'session',
             'provider' => 'sellers',
         ],
+
+        'delivery_agent' => [
+            'driver' => 'session',
+            'provider' => 'delivery_agents',
+        ],
     ],
 
     /*
@@ -87,6 +93,11 @@ return [
         'sellers' => [
             'driver' => 'eloquent',
             'model' => Seller::class,
+        ],
+
+        'delivery_agents' => [
+            'driver' => 'eloquent',
+            'model' => DeliveryAgent::class,
         ],
     ],
 

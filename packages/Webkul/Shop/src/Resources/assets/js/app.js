@@ -144,6 +144,7 @@ window.app = createApp({
  * Global plugins registration.
  */
 import Axios from "./plugins/axios";
+import Echo from "./plugins/echo";
 import Emitter from "./plugins/emitter";
 import Shop from "./plugins/shop";
 import VeeValidate from "./plugins/vee-validate";
@@ -151,6 +152,7 @@ import Flatpickr from "./plugins/flatpickr";
 
 [
     Axios,
+    Echo,
     Emitter,
     Shop,
     VeeValidate,
