@@ -57,7 +57,7 @@
 
     <!-- Breadcrumbs -->
     @if ((core()->getConfigData('general.general.breadcrumbs.shop')))
-        <div class="flex justify-center px-7 max-lg:hidden">
+        <div class="flex justify-center px-4 sm:px-7">
             <x-shop::breadcrumbs
                 name="product"
                 :entity="$product"
@@ -298,7 +298,7 @@
                                 {!! view_render_event('bagisto.shop.products.name.before', ['product' => $product]) !!}
 
                                 <div class="flex justify-between gap-4">
-                                    <h1 class="break-words text-3xl font-medium max-sm:text-xl" v-pre>
+                                    <h1 class="break-words text-3xl font-semibold text-brandNavy max-sm:text-xl" v-pre>
                                         {{ $product->name }}
                                     </h1>
 
@@ -405,7 +405,7 @@
 
                                         <x-shop::button
                                             type="submit"
-                                            class="secondary-button w-full max-w-full max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
+                                            class="flex w-full max-w-full items-center justify-center gap-1.5 rounded-2xl bg-brandGreen py-4 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 max-md:py-3 max-sm:rounded-lg max-sm:py-1.5"
                                             button-type="secondary-button"
                                             :loading="false"
                                             :title="trans('shop::app.products.view.add-to-cart')"
@@ -434,7 +434,7 @@
                                     @if (core()->getConfigData('catalog.products.storefront.buy_now_button_display'))
                                         <x-shop::button
                                             type="submit"
-                                            class="primary-button mt-5 w-full max-w-[470px] max-md:py-3 max-sm:mt-3 max-sm:rounded-lg max-sm:py-1.5"
+                                            class="flex w-full max-w-[470px] items-center justify-center gap-1.5 rounded-2xl bg-brandNavy py-4 font-medium text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 mt-5 max-md:py-3 max-sm:mt-3 max-sm:rounded-lg max-sm:py-1.5"
                                             button-type="primary-button"
                                             :title="trans('shop::app.products.view.buy-now')"
                                             :disabled="! $product->isSaleable(1)"

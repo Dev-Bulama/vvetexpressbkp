@@ -21,7 +21,7 @@
             <template v-for="(media, index) in [...media.images, ...media.videos]">
                 <video
                     v-if="media.type == 'videos'"
-                    :class="`transparent max-h-[100px] min-w-[100px] cursor-pointer rounded-xl border ${isActiveMedia(index) ? 'pointer-events-none border-navyBlue' : 'border-white'}`"
+                    :class="`transparent max-h-[100px] min-w-[100px] cursor-pointer rounded-xl border ${isActiveMedia(index) ? 'pointer-events-none border-brandGreen' : 'border-white'}`"
                     @click="change(media, index)"
                     alt="{{ $product->name }}"
                     tabindex="0"
@@ -34,7 +34,7 @@
 
                 <img
                     v-else
-                    :class="`transparent max-h-[100px] min-w-[100px] cursor-pointer rounded-xl border ${isActiveMedia(index) ? 'pointer-events-none border border-navyBlue' : 'border-white'}`"
+                    :class="`transparent max-h-[100px] min-w-[100px] cursor-pointer rounded-xl border ${isActiveMedia(index) ? 'pointer-events-none border border-brandGreen' : 'border-white'}`"
                     :src="media.small_image_url"
                     alt="{{ $product->name }}"
                     width="100"

@@ -3,6 +3,7 @@
 namespace Webkul\Marketplace\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Webkul\Category\Models\Category;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Models\Channel;
@@ -102,6 +103,8 @@ class VetMarketplaceDemoSeeder extends Seeder
             return;
         }
 
+        $this->seedCurrency($channel);
+
         $categoryRepository = app(CategoryRepository::class);
         $productRepository = app(ProductRepository::class);
 
@@ -116,6 +119,45 @@ class VetMarketplaceDemoSeeder extends Seeder
         $this->seedFlashDeals($productRepository, $productIds);
 
         $this->command?->info('Vet marketplace demo data seeded: '.count($categoryIds).' categories, '.count($productIds).' products, '.count($sellerIds).' vendors.');
+    }
+
+    /**
+     * VetExpress is a Nigerian marketplace - every price on the storefront
+     * must render in Naira. Bagisto's installer only seeds USD by default, so
+     * make NGN the channel's base currency (no exchange-rate conversion,
+     * since demo prices are already Naira amounts) if it isn't already.
+     */
+    protected function seedCurrency(Channel $channel): void
+    {
+        $ngn = DB::table('currencies')->where('code', 'NGN')->first();
+
+        if (! $ngn) {
+            $ngnId = DB::table('currencies')->insertGetId([
+                'code' => 'NGN',
+                'name' => 'Nigerian Naira',
+                'symbol' => '₦',
+                'decimal' => 2,
+                'group_separator' => ',',
+                'decimal_separator' => '.',
+                'currency_position' => 'left',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $ngnId = $ngn->id;
+        }
+
+        if ((int) $channel->base_currency_id !== $ngnId) {
+            $channel->update(['base_currency_id' => $ngnId]);
+        }
+
+        if (! DB::table('channel_currencies')->where('channel_id', $channel->id)->where('currency_id', $ngnId)->exists()) {
+            DB::table('channel_currencies')->insert(['channel_id' => $channel->id, 'currency_id' => $ngnId]);
+        }
+
+        if (! DB::table('currency_exchange_rates')->where('target_currency', $ngnId)->exists()) {
+            DB::table('currency_exchange_rates')->insert(['target_currency' => $ngnId, 'rate' => 1]);
+        }
     }
 
     /**
@@ -214,6 +256,10 @@ class VetMarketplaceDemoSeeder extends Seeder
         foreach ($this->vendors as $index => [$shopName, $contactName, $city, $lat, $lng]) {
             $email = 'vendor'.($index + 1).'@vetexpress.demo';
 
+            // Deterministic 4.3-4.9 spread rather than a flat default, so
+            // vendor comparison rows aren't all identical.
+            $rating = round(4.3 + (($index * 7) % 13) / 20, 1);
+
             $seller = Seller::firstOrCreate(
                 ['email' => $email],
                 [
@@ -225,6 +271,7 @@ class VetMarketplaceDemoSeeder extends Seeder
                     'latitude' => $lat,
                     'longitude' => $lng,
                     'status' => Seller::STATUS_APPROVED,
+                    'rating' => $rating,
                 ]
             );
 

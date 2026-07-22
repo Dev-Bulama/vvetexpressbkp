@@ -43,6 +43,7 @@ class Seller extends Authenticatable implements SellerContract
         'latitude',
         'longitude',
         'status',
+        'rating',
         'email_verified_at',
     ];
 
@@ -64,6 +65,7 @@ class Seller extends Authenticatable implements SellerContract
     protected $casts = [
         'latitude'          => 'decimal:8',
         'longitude'         => 'decimal:8',
+        'rating'            => 'decimal:1',
         'email_verified_at' => 'datetime',
         'password'          => 'hashed',
     ];
