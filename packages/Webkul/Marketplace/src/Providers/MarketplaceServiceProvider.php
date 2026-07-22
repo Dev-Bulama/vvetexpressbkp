@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Webkul\Marketplace\Http\Middleware\DeliveryAgentGuard;
 use Webkul\Marketplace\Http\Middleware\SellerGuard;
+use Webkul\Marketplace\Listeners\CreateDeliveryOnOrderPlaced;
 use Webkul\Theme\ViewRenderEventManager;
 
 class MarketplaceServiceProvider extends ServiceProvider
@@ -38,5 +39,7 @@ class MarketplaceServiceProvider extends ServiceProvider
         Event::listen('bagisto.shop.products.price.after', function (ViewRenderEventManager $manager) {
             $manager->addTemplate('marketplace::shop.product-availability');
         });
+
+        Event::listen('checkout.order.save.after', CreateDeliveryOnOrderPlaced::class);
     }
 }

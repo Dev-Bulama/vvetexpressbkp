@@ -19,4 +19,12 @@ return [
         'default_rate' => '0',
         'class' => 'Webkul\Shipping\Carriers\Free',
     ],
+
+    'marketplace_logistics' => [
+        'code' => 'marketplace_logistics',
+        'title' => 'Marketplace Delivery',
+        'description' => 'Delivery service selected during checkout.',
+        'active' => true,
+        'class' => 'Webkul\Marketplace\Carriers\MarketplaceLogistics',
+    ],
 ];

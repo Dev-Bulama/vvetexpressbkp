@@ -333,7 +333,7 @@
                             {!! view_render_event('bagisto.shop.checkout.mini-cart.continue_to_checkout.before') !!}
 
                         <a
-                            href="{{ route('shop.checkout.onepage.index') }}"
+                            href="{{ route('marketplace.checkout.vendor.index') }}"
                             class="mx-auto block w-full cursor-pointer rounded-2xl bg-navyBlue px-11 py-4 text-center text-base font-medium text-white max-md:rounded-lg max-md:px-5 max-md:py-2"
                         >
                             @lang('shop::app.checkout.cart.mini-cart.continue-to-checkout')
@@ -354,7 +354,7 @@
             </x-shop::drawer>
 
         @else
-            <a href="{{ route('shop.checkout.onepage.index') }}">
+            <a href="{{ route('marketplace.checkout.vendor.index') }}">
                 {!! view_render_event('bagisto.shop.checkout.mini-cart.drawer.toggle.before') !!}
 
                     <span class="relative">

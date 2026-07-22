@@ -129,7 +129,32 @@ class VetMarketplaceDemoSeeder extends Seeder
 
         $this->seedLogistics();
 
+        $this->seedCarrierConfig($channel);
+
         $this->command?->info('Vet marketplace demo data seeded: '.count($categoryIds).' categories, '.count($productIds).' products, '.count($sellerIds).' vendors.');
+    }
+
+    /**
+     * The checkout's "Choose a Delivery Service" step is meant to be the
+     * only way delivery pricing is decided - Bagisto's stock flat-rate/free
+     * carriers would otherwise show up as competing options alongside our
+     * real, distance-priced marketplace_logistics carrier at the onepage
+     * shipping-method step. Switching them off here is a normal admin
+     * setting (Settings > Sales > Shipping Methods), not something hidden.
+     */
+    protected function seedCarrierConfig(Channel $channel): void
+    {
+        foreach (['flatrate', 'free'] as $code) {
+            CoreConfig::updateOrCreate(
+                ['code' => "sales.carriers.{$code}.active", 'channel_code' => $channel->code, 'locale_code' => null],
+                ['value' => '0']
+            );
+        }
+
+        CoreConfig::updateOrCreate(
+            ['code' => 'sales.carriers.marketplace_logistics.active', 'channel_code' => $channel->code, 'locale_code' => null],
+            ['value' => '1']
+        );
     }
 
     /**

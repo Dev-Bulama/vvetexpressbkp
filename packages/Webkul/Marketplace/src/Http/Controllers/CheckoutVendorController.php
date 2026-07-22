@@ -86,9 +86,15 @@ class CheckoutVendorController extends Controller
 
         $this->syncCartPricesToSelectedVendors($vendorSelection);
 
+        // A previously chosen delivery service almost certainly no longer
+        // matches the new vendor selection's pickup point(s) - clear it so
+        // MarketplaceLogistics::isAvailable() correctly reports unavailable
+        // until the customer picks again for this vendor combination.
+        session()->forget('marketplace.delivery_selection');
+
         session()->flash('success', 'Vendors selected. Continue to checkout.');
 
-        return redirect()->route('shop.checkout.onepage.index');
+        return redirect()->route('marketplace.checkout.delivery.index');
     }
 
     /**
