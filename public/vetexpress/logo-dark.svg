@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" height="32" role="img" aria-label="VetExpress">
+    <circle cx="16" cy="20" r="15" fill="#34d399" />
+    <path d="M9 20c2-6 5-9 7-9s5 3 7 9c-2 3-4.5 4.5-7 4.5S11 23 9 20Z" fill="#0f172a" />
+    <circle cx="12.5" cy="15.5" r="1.6" fill="#34d399" />
+    <circle cx="19.5" cy="15.5" r="1.6" fill="#34d399" />
+    <text x="40" y="27" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="21" font-weight="700" fill="#f8fafc">Vet<tspan fill="#34d399">Express</tspan></text>
+</svg>

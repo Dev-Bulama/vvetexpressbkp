@@ -132,10 +132,10 @@ return [
 
         'core' => [
             'channels' => [
-                'meta-description' => 'Demo store meta description',
-                'meta-keywords' => 'Demo store meta keyword',
-                'meta-title' => 'Demo store',
-                'name' => 'Default',
+                'meta-description' => 'Shop trusted local vendors near you on VetExpress.',
+                'meta-keywords' => 'marketplace, local vendors, pet supplies, delivery',
+                'meta-title' => 'VetExpress',
+                'name' => 'VetExpress',
             ],
 
             'currencies' => [
