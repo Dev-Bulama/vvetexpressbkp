@@ -402,4 +402,21 @@ return [
         'sort' => 9,
         'icon' => 'icon-configuration',
     ],
+
+    /**
+     * Marketplace.
+     */
+    [
+        'key' => 'marketplace',
+        'name' => 'admin::app.components.layouts.sidebar.marketplace',
+        'route' => 'marketplace.admin.sellers.index',
+        'sort' => 10,
+        'icon' => 'icon-customers',
+    ], [
+        'key' => 'marketplace.sellers',
+        'name' => 'admin::app.components.layouts.sidebar.sellers',
+        'route' => 'marketplace.admin.sellers.index',
+        'sort' => 1,
+        'icon' => '',
+    ],
 ];

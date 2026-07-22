@@ -1244,4 +1244,28 @@ return [
         ],
         'sort' => 9,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Marketplace
+    |--------------------------------------------------------------------------
+    |
+    | All ACLs related to the seller marketplace will be placed here.
+    |
+    */
+    [
+        'key' => 'marketplace',
+        'name' => 'admin::app.acl.marketplace',
+        'route' => 'marketplace.admin.sellers.index',
+        'sort' => 10,
+    ], [
+        'key' => 'marketplace.sellers',
+        'name' => 'admin::app.acl.sellers',
+        'route' => [
+            'marketplace.admin.sellers.index',
+            'marketplace.admin.sellers.edit',
+            'marketplace.admin.sellers.update-status',
+        ],
+        'sort' => 1,
+    ],
 ];

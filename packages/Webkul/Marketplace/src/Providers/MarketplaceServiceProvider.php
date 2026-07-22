@@ -21,5 +21,7 @@ class MarketplaceServiceProvider extends ServiceProvider
         $router->aliasMiddleware('seller', SellerGuard::class);
 
         Route::middleware('web')->group(__DIR__.'/../Routes/seller-routes.php');
+
+        Route::middleware('web')->group(__DIR__.'/../Routes/admin-routes.php');
     }
 }
