@@ -29,6 +29,7 @@ class SellerProductRepository extends Repository
             ->where('offers.is_active', true)
             ->where('offers.quantity', '>', 0)
             ->where('sellers.status', 'approved')
+            ->where('sellers.is_delivery_enabled', true)
             ->select([
                 'offers.id as offer_id',
                 'offers.seller_id',
@@ -40,6 +41,9 @@ class SellerProductRepository extends Repository
                 'sellers.latitude',
                 'sellers.longitude',
                 'sellers.rating',
+                'sellers.service_radius_km',
+                'sellers.opening_time',
+                'sellers.closing_time',
             ]);
 
         if ($latitude !== null && $longitude !== null) {
@@ -53,13 +57,88 @@ class SellerProductRepository extends Repository
             );
         }
 
-        $offers = collect($query->get());
+        $offers = collect($query->get())
+            ->filter(fn ($offer) => $this->isWithinServiceArea($offer))
+            ->map(function ($offer) {
+                $offer->is_open = $this->isCurrentlyOpen($offer);
+
+                return $offer;
+            })
+            ->filter(fn ($offer) => $offer->is_open)
+            ->values();
 
         if ($offers->isEmpty()) {
             return $offers;
         }
 
-        return $this->annotateDelivery($this->rankByRecommendation($offers));
+        return $this->annotateBadges($this->annotateDelivery($this->rankByRecommendation($offers)));
+    }
+
+    /**
+     * A vendor with a known distance is only eligible if the customer falls
+     * within their configured delivery radius. A vendor with no location or
+     * an unset radius is never excluded on this basis (there's nothing
+     * concrete to check), matching how distance-less offers are already
+     * handled elsewhere in this class.
+     */
+    private function isWithinServiceArea(object $offer): bool
+    {
+        if (! isset($offer->distance_km) || $offer->distance_km === null) {
+            return true;
+        }
+
+        $radius = (int) ($offer->service_radius_km ?? 0);
+
+        if ($radius <= 0) {
+            return true;
+        }
+
+        return (float) $offer->distance_km <= $radius;
+    }
+
+    /**
+     * A vendor with no configured opening/closing time is treated as always
+     * open - operating hours are optional, not a default-closed state.
+     */
+    private function isCurrentlyOpen(object $offer): bool
+    {
+        if (empty($offer->opening_time) || empty($offer->closing_time)) {
+            return true;
+        }
+
+        $now = now()->format('H:i:s');
+
+        return $now >= $offer->opening_time && $now <= $offer->closing_time;
+    }
+
+    /**
+     * Flags the single nearest, fastest, and cheapest-delivery-fee offer
+     * (each independently - one offer can hold more than one badge) so the
+     * storefront can show "Nearest"/"Fastest"/"Lowest delivery fee" without
+     * recomputing anything client-side.
+     */
+    private function annotateBadges(Collection $offers): Collection
+    {
+        if ($offers->count() < 2) {
+            return $offers->each(function ($offer) {
+                $offer->is_nearest = false;
+                $offer->is_fastest = false;
+                $offer->is_lowest_fee = false;
+            });
+        }
+
+        $withDistance = $offers->filter(fn ($o) => isset($o->distance_km) && $o->distance_km !== null);
+        $nearestId = $withDistance->isNotEmpty() ? $withDistance->sortBy('distance_km')->first()->offer_id : null;
+        $fastestId = $withDistance->isNotEmpty()
+            ? $withDistance->sortBy(fn ($o) => (float) $o->distance_km)->first()->offer_id
+            : null;
+        $lowestFeeId = $offers->sortBy('delivery_fee')->first()->offer_id;
+
+        return $offers->each(function ($offer) use ($nearestId, $fastestId, $lowestFeeId) {
+            $offer->is_nearest = $offer->offer_id === $nearestId;
+            $offer->is_fastest = $offer->offer_id === $fastestId;
+            $offer->is_lowest_fee = $offer->offer_id === $lowestFeeId;
+        });
     }
 
     /**

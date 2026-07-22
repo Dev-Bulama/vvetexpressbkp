@@ -161,8 +161,16 @@
 
                                                         <span class="font-medium text-slate-800">{{ $offer->shop_name }}</span>
 
-                                                        @if ($loop->first && $sort === 'recommended')
+                                                        @if ($offer->is_nearest ?? false)
                                                             <span class="rounded-full bg-brandGreen/10 px-2 py-0.5 text-[11px] font-semibold text-brandGreen">Nearest</span>
+                                                        @endif
+
+                                                        @if (($offer->is_fastest ?? false) && ! ($offer->is_nearest ?? false))
+                                                            <span class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600">Fastest</span>
+                                                        @endif
+
+                                                        @if (($offer->is_lowest_fee ?? false) && ! ($offer->is_nearest ?? false))
+                                                            <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Lowest Fee</span>
                                                         @endif
                                                     </div>
 

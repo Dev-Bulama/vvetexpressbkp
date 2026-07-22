@@ -15,15 +15,25 @@
         </a>
     </div>
 
-    <div class="flex items-center gap-1.5">
+    <button type="button" onclick="marketplaceOpenLocationModal()" class="flex items-center gap-1.5 hover:text-white">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-4.5-7-8.25-7-11.5A7 7 0 0119 9.5c0 3.25-2.5 7-7 11.5z" /><circle cx="12" cy="9.5" r="2.25" /></svg>
 
-        <span>
+        <span id="marketplace-location-label-utility">
             @lang('shop::app.components.layouts.header.utility.deliver-to')
             <strong class="font-semibold">{{ session('marketplace.customer_location.label', 'Set location') }}</strong>
         </span>
-    </div>
+    </button>
 </div>
+
+<button type="button" onclick="marketplaceOpenLocationModal()" class="flex items-center gap-1 border-b border-slate-100 px-4 py-1.5 text-xs text-slate-600 lg:hidden">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0 text-brandGreen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-4.5-7-8.25-7-11.5A7 7 0 0119 9.5c0 3.25-2.5 7-7 11.5z" /><circle cx="12" cy="9.5" r="2.25" /></svg>
+
+    <span id="marketplace-location-label-mobile" class="truncate">
+        Deliver to: <strong class="font-semibold text-brandNavy">{{ session('marketplace.customer_location.label', 'Set location') }}</strong>
+    </span>
+</button>
+
+@include('shop::components.layouts.header.location-modal')
 
 @if(core()->getCurrentChannel()->locales()->count() > 1 || core()->getCurrentChannel()->currencies()->count() > 1 )
     <div class="max-lg:hidden">
