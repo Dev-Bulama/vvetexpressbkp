@@ -24,6 +24,8 @@ class MarketplaceServiceProvider extends ServiceProvider
 
         Route::middleware(['web', 'shop'])->group(__DIR__.'/../Routes/seller-routes.php');
 
+        Route::middleware(['web', 'shop'])->group(__DIR__.'/../Routes/checkout-routes.php');
+
         Route::middleware('web')->group(__DIR__.'/../Routes/admin-routes.php');
 
         Event::listen('bagisto.shop.products.price.after', function (ViewRenderEventManager $manager) {
