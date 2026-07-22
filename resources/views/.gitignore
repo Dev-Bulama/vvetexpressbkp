@@ -1,2 +1,6 @@
 *
 !.gitignore
+!vendor/
+!vendor/shop/
+!vendor/shop/home/
+!vendor/shop/home/*.blade.php
