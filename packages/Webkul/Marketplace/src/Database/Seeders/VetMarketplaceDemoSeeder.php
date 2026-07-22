@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Webkul\Category\Models\Category;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Models\Channel;
+use Webkul\Core\Models\CoreConfig;
 use Webkul\Marketplace\Models\Seller;
 use Webkul\Marketplace\Models\SellerProduct;
 use Webkul\Product\Helpers\Indexers\Flat as FlatIndexer;
@@ -105,6 +106,8 @@ class VetMarketplaceDemoSeeder extends Seeder
 
         $this->seedCurrency($channel);
 
+        $this->seedStoreSettings($channel);
+
         $categoryRepository = app(CategoryRepository::class);
         $productRepository = app(ProductRepository::class);
 
@@ -161,11 +164,43 @@ class VetMarketplaceDemoSeeder extends Seeder
     }
 
     /**
+     * Real business-contact settings for the footer's Contact column, payment
+     * area, and support links. These are ordinary admin-configurable
+     * `core_config` values (Settings > General > Content > Footer) - seeded
+     * here only so the demo storefront isn't blank; a real operator would
+     * fill these in through the admin panel instead.
+     */
+    protected function seedStoreSettings(Channel $channel): void
+    {
+        $values = [
+            'general.content.footer.support_email' => 'support@vetexpress.ng',
+            'general.content.footer.support_phone' => '+234 800 123 4567',
+            'general.content.footer.address' => '12 Allen Avenue, Ikeja, Lagos, Nigeria',
+            'general.content.footer.facebook_url' => 'https://facebook.com/vetexpressng',
+            'general.content.footer.instagram_url' => 'https://instagram.com/vetexpressng',
+            'general.content.footer.x_url' => 'https://x.com/vetexpressng',
+        ];
+
+        foreach ($values as $code => $value) {
+            CoreConfig::updateOrCreate(
+                ['code' => $code, 'channel_code' => $channel->code, 'locale_code' => null],
+                ['value' => $value]
+            );
+        }
+    }
+
+    /**
      * @return array<int, int> category name => category id
      */
     protected function seedCategories(CategoryRepository $categoryRepository, int $rootCategoryId): array
     {
         $ids = [];
+
+        // Build the per-locale translation payload ourselves rather than
+        // passing the repository's 'locale' => 'all' convenience key -
+        // that path leaves a stray top-level 'locale' attribute on the
+        // model that isn't a real `categories` column, and fails the insert.
+        $locale = core()->getAllLocales()->first();
 
         foreach ($this->categories as $name) {
             $slug = 'vetdemo-'.str($name)->slug();
@@ -179,12 +214,14 @@ class VetMarketplaceDemoSeeder extends Seeder
             }
 
             $category = $categoryRepository->create([
-                'locale' => 'all',
-                'name' => $name,
-                'slug' => $slug,
                 'status' => 1,
                 'display_mode' => 'products_and_description',
                 'parent_id' => $rootCategoryId,
+                $locale->code => [
+                    'name' => $name,
+                    'slug' => $slug,
+                    'locale_id' => $locale->id,
+                ],
             ]);
 
             $ids[$name] = $category->id;
