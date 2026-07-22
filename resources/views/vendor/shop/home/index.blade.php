@@ -40,7 +40,7 @@
                     <div class="absolute bottom-16 right-40 h-16 w-16 rounded-xl bg-white/20"></div>
                 </div>
 
-                <div class="relative z-10 max-w-md">
+                <div class="relative max-w-md">
                     <span class="inline-block rounded-full bg-brandGreen px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Marketplace</span>
                     <h1 class="mt-3 text-3xl font-bold leading-tight md:text-4xl">Everything You Need, Closer to You</h1>
                     <p class="mt-3 text-white/80">Compare prices and delivery time from trusted vendors near you.</p>

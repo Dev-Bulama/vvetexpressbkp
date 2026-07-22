@@ -36,7 +36,7 @@
                             />
                         @else
                             <img
-                                src="{{ bagisto_asset('images/logo.svg', 'shop') }}"
+                                src="{{ asset('vetexpress/logo.svg') }}"
                                 alt="{{ config('app.name') }}"
                                 width="131"
                                 height="29"

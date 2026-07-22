@@ -11,7 +11,7 @@
                 @php
                     $logoUrl = core()->getConfigData('general.design.admin_logo.logo_image') 
                                 ? Storage::url(core()->getConfigData('general.design.admin_logo.logo_image')) 
-                                : bagisto_asset('images/logo.svg');
+                                : asset('vetexpress/logo.svg');
                 @endphp
 
                 <img

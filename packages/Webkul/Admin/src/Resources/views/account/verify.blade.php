@@ -15,7 +15,7 @@
             @else
                 <img
                     class="w-max"
-                    src="{{ bagisto_asset('images/logo.svg') }}"
+                    src="{{ asset('vetexpress/logo.svg') }}"
                     alt="{{ config('app.name') }}"
                 />
             @endif

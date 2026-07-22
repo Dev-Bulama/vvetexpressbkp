@@ -27,7 +27,7 @@
                     aria-label="@lang('shop::checkout.onepage.index.bagisto')"
                 >
                     <img
-                        src="{{ core()->getCurrentChannel()->logo_url ?? bagisto_asset('images/logo.svg') }}"
+                        src="{{ core()->getCurrentChannel()->logo_url ?? asset('vetexpress/logo.svg') }}"
                         alt="{{ config('app.name') }}"
                         width="131"
                         height="29"

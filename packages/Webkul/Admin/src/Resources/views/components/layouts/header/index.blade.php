@@ -741,9 +741,9 @@
                 return {
                     isDarkMode: {{ request()->cookie('dark_mode') ?? 0 }},
 
-                    logo: "{{ bagisto_asset('images/logo.svg') }}",
+                    logo: "{{ asset('vetexpress/logo.svg') }}",
 
-                    dark_logo: "{{ bagisto_asset('images/dark-logo.svg') }}",
+                    dark_logo: "{{ asset('vetexpress/logo-dark.svg') }}",
                 };
             },
 
