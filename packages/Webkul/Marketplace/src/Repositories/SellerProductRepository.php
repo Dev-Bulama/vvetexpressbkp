@@ -62,6 +62,102 @@ class SellerProductRepository extends Repository
     }
 
     /**
+     * The single best (lowest-price) active offer for each distinct product
+     * currently on offer, annotated with distance when coordinates are
+     * given. Used for storefront "recommended near you" style listings.
+     */
+    public function bestOfferPerProduct(?float $latitude = null, ?float $longitude = null, int $limit = 12): Collection
+    {
+        $query = DB::table('marketplace_seller_products as offers')
+            ->join('marketplace_sellers as sellers', 'sellers.id', '=', 'offers.seller_id')
+            ->join('product_flat as flat', function ($join) {
+                $join->on('flat.product_id', '=', 'offers.product_id')
+                    ->where('flat.channel', '=', core()->getCurrentChannel()->code)
+                    ->where('flat.locale', '=', app()->getLocale());
+            })
+            ->where('offers.is_active', true)
+            ->where('offers.quantity', '>', 0)
+            ->where('sellers.status', 'approved')
+            ->select([
+                'offers.id as offer_id',
+                'offers.product_id',
+                'offers.seller_id',
+                'offers.price',
+                'offers.quantity',
+                'flat.price as catalog_price',
+                'flat.name',
+                'flat.sku',
+                'flat.url_key',
+                'sellers.name as seller_name',
+                'sellers.shop_name',
+                'sellers.city',
+                'sellers.latitude',
+                'sellers.longitude',
+            ]);
+
+        if ($latitude !== null && $longitude !== null) {
+            $query->selectRaw(
+                '(6371 * acos(least(1, greatest(-1,
+                    cos(radians(?)) * cos(radians(sellers.latitude)) *
+                    cos(radians(sellers.longitude) - radians(?)) +
+                    sin(radians(?)) * sin(radians(sellers.latitude))
+                )))) as distance_km',
+                [$latitude, $longitude, $latitude]
+            );
+        }
+
+        $offers = collect($query->orderBy('offers.created_at', 'desc')->get());
+
+        return $offers
+            ->groupBy('product_id')
+            ->map(function ($productOffers) {
+                return $productOffers->sortBy('price')->first();
+            })
+            ->values()
+            ->sortBy(fn ($offer) => $offer->distance_km ?? PHP_FLOAT_MAX)
+            ->take($limit)
+            ->values();
+    }
+
+    /**
+     * Best active offer for each product currently running a genuine,
+     * time-boxed Bagisto special price (special_price_to still in the
+     * future). Used for the storefront Flash Deals section.
+     */
+    public function activeFlashOffers(int $limit = 8): Collection
+    {
+        $offers = DB::table('marketplace_seller_products as offers')
+            ->join('marketplace_sellers as sellers', 'sellers.id', '=', 'offers.seller_id')
+            ->join('product_flat as flat', function ($join) {
+                $join->on('flat.product_id', '=', 'offers.product_id')
+                    ->where('flat.channel', '=', core()->getCurrentChannel()->code)
+                    ->where('flat.locale', '=', app()->getLocale());
+            })
+            ->whereNotNull('flat.special_price_to')
+            ->where('flat.special_price_to', '>=', now()->toDateString())
+            ->where('offers.is_active', true)
+            ->where('offers.quantity', '>', 0)
+            ->where('sellers.status', 'approved')
+            ->select([
+                'offers.product_id',
+                'offers.price',
+                'offers.quantity',
+                'flat.price as catalog_price',
+                'flat.name',
+                'flat.url_key',
+                'flat.special_price_to',
+                'sellers.shop_name',
+            ])
+            ->get();
+
+        return collect($offers)
+            ->groupBy('product_id')
+            ->map(fn ($productOffers) => $productOffers->sortBy('price')->first())
+            ->values()
+            ->take($limit);
+    }
+
+    /**
      * Annotate each offer with a 0-1 recommendation score (higher is better)
      * combining price and distance, and sort best-first. Cheapest and
      * nearest each contribute equally; an offer with no distance available

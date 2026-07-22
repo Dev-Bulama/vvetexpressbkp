@@ -8,6 +8,7 @@ use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Models\Channel;
 use Webkul\Marketplace\Models\Seller;
 use Webkul\Marketplace\Models\SellerProduct;
+use Webkul\Product\Helpers\Indexers\Flat as FlatIndexer;
 use Webkul\Product\Repositories\ProductRepository;
 
 class VetMarketplaceDemoSeeder extends Seeder
@@ -112,6 +113,8 @@ class VetMarketplaceDemoSeeder extends Seeder
 
         $this->seedOffers($sellerIds, $productIds);
 
+        $this->seedFlashDeals($productRepository, $productIds);
+
         $this->command?->info('Vet marketplace demo data seeded: '.count($categoryIds).' categories, '.count($productIds).' products, '.count($sellerIds).' vendors.');
     }
 
@@ -187,6 +190,13 @@ class VetMarketplaceDemoSeeder extends Seeder
             $categoryName = $categoryNames[$index % count($categoryNames)];
 
             $product->categories()->sync([$categoryIds[$categoryName]]);
+
+            // Bagisto's storefront reads product name/price/url_key from the
+            // denormalized `product_flat` table, not the EAV rows directly.
+            // The repository's create/update events are expected to refresh
+            // it automatically, but that doesn't fire reliably outside a
+            // real HTTP request, so do it explicitly here.
+            app(FlatIndexer::class)->refresh($product);
 
             $ids[$sku] = $product->id;
         }
@@ -264,6 +274,69 @@ class VetMarketplaceDemoSeeder extends Seeder
                         'is_active' => true,
                     ]
                 );
+            }
+        }
+    }
+
+    /**
+     * Give a handful of products a genuine, time-boxed Bagisto special
+     * price (special_price + special_price_to) so the storefront's Flash
+     * Deals section has real deal data and a real countdown target -
+     * rather than a fabricated timer. Also drops the cheapest seller
+     * offer for each below the special price so the discount shown is real.
+     *
+     * @param  array<string, int>  $productIds  SKU => product id
+     */
+    protected function seedFlashDeals(ProductRepository $productRepository, array $productIds): void
+    {
+        $skus = array_keys($productIds);
+
+        // A handful of distinct products, staggered end dates so the
+        // countdown values aren't identical across cards. Bagisto's
+        // special_price_to attribute is date-only (no time-of-day), so the
+        // real countdown target is midnight at the end of that date.
+        $deals = [
+            ['sku' => $skus[0], 'discount' => 0.20, 'daysFromNow' => 0],
+            ['sku' => $skus[4], 'discount' => 0.15, 'daysFromNow' => 1],
+            ['sku' => $skus[9], 'discount' => 0.25, 'daysFromNow' => 2],
+            ['sku' => $skus[14], 'discount' => 0.12, 'daysFromNow' => 3],
+        ];
+
+        foreach ($deals as $deal) {
+            $productId = $productIds[$deal['sku']];
+            $product = $productRepository->find($productId);
+            $catalogPrice = (float) $product->price;
+            $specialPrice = round($catalogPrice * (1 - $deal['discount']), 2);
+            $specialPriceTo = now()->addDays($deal['daysFromNow'])->endOfDay();
+
+            // Bagisto's update() treats every boolean attribute absent from
+            // $data as false, and syncs categories to [] when the key is
+            // missing - it's built for a full admin-form submission, not a
+            // partial patch. Re-supply everything a second update() call
+            // would otherwise silently wipe.
+            $existingCategoryIds = $product->categories()->pluck('categories.id')->toArray();
+
+            $product = $productRepository->update([
+                'status' => 1,
+                'visible_individually' => 1,
+                'categories' => $existingCategoryIds,
+                'special_price' => $specialPrice,
+                'special_price_from' => now()->subDay()->toDateString(),
+                'special_price_to' => $specialPriceTo->toDateString(),
+            ], $productId);
+
+            app(FlatIndexer::class)->refresh($product);
+
+            // Make sure the cheapest active offer for this product is at
+            // or below the special price, so the flash-deal discount shown
+            // on the storefront reflects a real, purchasable price.
+            $cheapestOffer = SellerProduct::where('product_id', $productId)
+                ->where('is_active', true)
+                ->orderBy('price')
+                ->first();
+
+            if ($cheapestOffer && (float) $cheapestOffer->price > $specialPrice) {
+                $cheapestOffer->update(['price' => $specialPrice]);
             }
         }
     }

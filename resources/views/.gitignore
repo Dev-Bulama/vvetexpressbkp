@@ -4,3 +4,5 @@
 !vendor/shop/
 !vendor/shop/home/
 !vendor/shop/home/*.blade.php
+!vendor/shop/home/partials/
+!vendor/shop/home/partials/*.blade.php
