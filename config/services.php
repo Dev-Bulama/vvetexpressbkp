@@ -93,4 +93,10 @@ return [
         'client_secret' => env('GITHUB_CLIENT_SECRET'),
         'redirect' => env('GITHUB_CALLBACK_URL'),
     ],
+
+    'erpnext' => [
+        'base_url' => env('ERPNEXT_BASE_URL'),
+        'api_key' => env('ERPNEXT_API_KEY'),
+        'api_secret' => env('ERPNEXT_API_SECRET'),
+    ],
 ];

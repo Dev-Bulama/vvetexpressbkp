@@ -2,6 +2,7 @@
 
 namespace Webkul\Marketplace\Providers;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,7 @@ use Spatie\ResponseCache\ResponseCache;
 use Webkul\CMS\Models\Page as CmsPage;
 use Webkul\Core\Models\Channel;
 use Webkul\Core\Models\CoreConfig;
+use Webkul\Marketplace\Console\Commands\SyncErpNextProductsCommand;
 use Webkul\Marketplace\Http\Middleware\DeliveryAgentGuard;
 use Webkul\Marketplace\Http\Middleware\SellerGuard;
 use Webkul\Marketplace\Listeners\CreateDeliveryOnOrderPlaced;
@@ -54,6 +56,18 @@ class MarketplaceServiceProvider extends ServiceProvider
         Event::listen('checkout.order.save.after', CreateDeliveryOnOrderPlaced::class);
 
         $this->clearResponseCacheOnStorefrontChanges();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([SyncErpNextProductsCommand::class]);
+        }
+
+        // Shared hosting rarely has a cron entry wired up by default - this
+        // only fires if the host's crontab actually calls `schedule:run`
+        // (see the sync command's own error message for the manual
+        // fallback: `php artisan erpnext:sync-products`).
+        $this->app->afterResolving(Schedule::class, function (Schedule $schedule) {
+            $schedule->command(SyncErpNextProductsCommand::class)->hourly()->withoutOverlapping();
+        });
     }
 
     /**
