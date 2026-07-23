@@ -10,6 +10,7 @@ use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
 use Webkul\Core\Http\Middleware\SecureHeaders;
 use Webkul\Installer\Http\Middleware\CanInstall;
+use Webkul\Marketplace\Exceptions\VendorNoLongerEligibleException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -52,5 +53,15 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Order placement can throw this mid-checkout if the selected
+        // vendor loses full-cart eligibility between steps (stock moved,
+        // vendor suspended). Bagisto's own storeOrder() only catches
+        // CouponUsageLimitExceededException, so without this the customer
+        // would see a raw server error instead of the clear message this
+        // exception already carries.
+        $exceptions->render(function (VendorNoLongerEligibleException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+        });
     })->create();

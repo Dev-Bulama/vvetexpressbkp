@@ -81,7 +81,7 @@ class SellerProductRepository extends Repository
      * concrete to check), matching how distance-less offers are already
      * handled elsewhere in this class.
      */
-    private function isWithinServiceArea(object $offer): bool
+    public function isWithinServiceArea(object $offer): bool
     {
         if (! isset($offer->distance_km) || $offer->distance_km === null) {
             return true;
@@ -100,7 +100,7 @@ class SellerProductRepository extends Repository
      * A vendor with no configured opening/closing time is treated as always
      * open - operating hours are optional, not a default-closed state.
      */
-    private function isCurrentlyOpen(object $offer): bool
+    public function isCurrentlyOpen(object $offer): bool
     {
         if (empty($offer->opening_time) || empty($offer->closing_time)) {
             return true;

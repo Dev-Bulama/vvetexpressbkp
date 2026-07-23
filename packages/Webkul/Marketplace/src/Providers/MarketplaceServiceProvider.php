@@ -15,6 +15,7 @@ use Webkul\Marketplace\Console\Commands\SyncErpNextProductsCommand;
 use Webkul\Marketplace\Http\Middleware\DeliveryAgentGuard;
 use Webkul\Marketplace\Http\Middleware\SellerGuard;
 use Webkul\Marketplace\Listeners\CreateDeliveryOnOrderPlaced;
+use Webkul\Marketplace\Listeners\RevalidateVendorBeforeOrderPlaced;
 use Webkul\Theme\Models\ThemeCustomization;
 use Webkul\Theme\ViewRenderEventManager;
 
@@ -52,6 +53,8 @@ class MarketplaceServiceProvider extends ServiceProvider
         Event::listen('bagisto.shop.customers.account.orders.view.before', function (ViewRenderEventManager $manager) {
             $manager->addTemplate('marketplace::shop.order-delivery-tracking');
         });
+
+        Event::listen('checkout.order.save.before', RevalidateVendorBeforeOrderPlaced::class);
 
         Event::listen('checkout.order.save.after', CreateDeliveryOnOrderPlaced::class);
 

@@ -8,10 +8,18 @@ use Illuminate\View\View;
 use Webkul\Checkout\Facades\Cart;
 use Webkul\Marketplace\Logistics\Services\DeliveryQuoteService;
 use Webkul\Marketplace\Models\Seller;
+use Webkul\Marketplace\Services\VendorCartEligibilityService;
 
+/**
+ * One order, one vendor: this step only ever quotes delivery from the
+ * single vendor chosen at the previous step, never a per-vendor list.
+ */
 class CheckoutDeliveryController extends Controller
 {
-    public function __construct(protected DeliveryQuoteService $deliveryQuoteService) {}
+    public function __construct(
+        protected DeliveryQuoteService $deliveryQuoteService,
+        protected VendorCartEligibilityService $eligibilityService
+    ) {}
 
     public function index(): View|RedirectResponse
     {
@@ -21,11 +29,13 @@ class CheckoutDeliveryController extends Controller
             return redirect()->route('shop.checkout.cart.index');
         }
 
-        $vendorSelection = session('marketplace.vendor_selection', []);
+        $sellerId = session('marketplace.vendor_selection');
 
-        if (empty($vendorSelection)) {
+        if (! $sellerId) {
             return redirect()->route('marketplace.checkout.vendor.index');
         }
+
+        $seller = Seller::find($sellerId);
 
         $dropoffLat = session('marketplace.customer_location.lat');
         $dropoffLng = session('marketplace.customer_location.lng');
@@ -36,68 +46,68 @@ class CheckoutDeliveryController extends Controller
             return redirect()->route('marketplace.checkout.vendor.index');
         }
 
-        $sellerIds = collect($vendorSelection)->unique()->values();
+        // The vendor could have lost stock between the vendor step and this
+        // one - re-check before quoting delivery for it.
+        $check = $seller
+            ? $this->eligibilityService->isStillEligible($seller, $cart, (float) $dropoffLat, (float) $dropoffLng)
+            : null;
 
-        $sellersWithQuotes = $sellerIds->map(function ($sellerId) use ($cart, $dropoffLat, $dropoffLng) {
-            $seller = Seller::find($sellerId);
+        if (! $seller || ! $check->eligible) {
+            session()->forget(['marketplace.vendor_selection', 'marketplace.delivery_selection']);
+            session()->flash('error', 'The selected vendor can no longer fulfil all the products and quantities in your cart. Please allow the system to find another complete vendor or adjust your cart.');
 
-            if (! $seller || ! $seller->latitude || ! $seller->longitude) {
-                return null;
-            }
+            return redirect()->route('marketplace.checkout.vendor.index');
+        }
 
-            $productNames = collect($cart->items)
-                ->filter(fn ($item) => (int) (session('marketplace.vendor_selection')[$item->product_id] ?? 0) === (int) $sellerId)
-                ->pluck('name');
+        if (! $seller->latitude || ! $seller->longitude) {
+            session()->flash('error', 'This vendor has no pickup location configured. Please choose another vendor.');
 
-            $quotes = $this->deliveryQuoteService->eligibleQuotes(
-                $cart->id,
-                $sellerId,
-                (float) $seller->latitude,
-                (float) $seller->longitude,
-                (float) $dropoffLat,
-                (float) $dropoffLng,
-            );
+            return redirect()->route('marketplace.checkout.vendor.index');
+        }
 
-            return [
-                'seller' => $seller,
-                'product_names' => $productNames,
-                'quotes' => $quotes,
-            ];
-        })->filter()->values();
+        $quotes = $this->deliveryQuoteService->eligibleQuotes(
+            $cart->id,
+            $seller->id,
+            (float) $seller->latitude,
+            (float) $seller->longitude,
+            (float) $dropoffLat,
+            (float) $dropoffLng,
+        );
 
         return view('marketplace::checkout.delivery', [
-            'sellersWithQuotes' => $sellersWithQuotes,
+            'seller' => $seller,
+            'quotes' => $quotes,
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'quote_token' => ['required', 'array'],
-            'quote_token.*' => ['required', 'string'],
+            'quote_token' => ['required', 'string'],
         ]);
 
-        $selection = [];
+        $sellerId = session('marketplace.vendor_selection');
 
-        foreach ($request->input('quote_token') as $sellerId => $token) {
-            $quote = $this->deliveryQuoteService->validate($token);
-
-            if (! $quote) {
-                session()->flash('error', 'One of the selected delivery services has expired. Please choose again.');
-
-                return redirect()->route('marketplace.checkout.delivery.index');
-            }
-
-            $selection[$sellerId] = [
-                'quote_token' => $quote->quote_token,
-                'fee_minor' => $quote->fee_minor,
-                'service_type_name' => $quote->serviceType->name,
-                'logistics_provider_id' => $quote->logistics_provider_id,
-                'logistics_service_type_id' => $quote->logistics_service_type_id,
-            ];
+        if (! $sellerId) {
+            return redirect()->route('marketplace.checkout.vendor.index');
         }
 
-        session(['marketplace.delivery_selection' => $selection]);
+        $quote = $this->deliveryQuoteService->validate($request->input('quote_token'));
+
+        if (! $quote) {
+            session()->flash('error', 'This delivery service has expired. Please choose again.');
+
+            return redirect()->route('marketplace.checkout.delivery.index');
+        }
+
+        session(['marketplace.delivery_selection' => [
+            'seller_id' => $sellerId,
+            'quote_token' => $quote->quote_token,
+            'fee_minor' => $quote->fee_minor,
+            'service_type_name' => $quote->serviceType->name,
+            'logistics_provider_id' => $quote->logistics_provider_id,
+            'logistics_service_type_id' => $quote->logistics_service_type_id,
+        ]]);
 
         return redirect()->route('shop.checkout.onepage.index');
     }

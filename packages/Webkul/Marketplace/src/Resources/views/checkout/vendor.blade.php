@@ -1,13 +1,9 @@
 @push('meta')
-    <meta name="title" content="Delivery &amp; Vendor" />
+    <meta name="title" content="Choose Your Vendor" />
 @endpush
 
-@php
-    $vendorSelection = session('marketplace.vendor_selection', []);
-@endphp
-
 <x-shop::layouts>
-    <x-slot:title>Delivery &amp; Vendor</x-slot>
+    <x-slot:title>Choose Your Vendor</x-slot>
 
     <div class="mx-auto max-w-[1200px] px-4 py-8">
         {{-- Stepper --}}
@@ -19,7 +15,7 @@
             <div class="h-px w-8 bg-brandGreen sm:w-16"></div>
             <div class="flex items-center gap-2 text-brandNavy">
                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-brandGreen bg-brandGreen text-white">2</span>
-                <span class="font-medium">Delivery &amp; Vendor</span>
+                <span class="font-medium">Vendor</span>
             </div>
             <div class="h-px w-8 bg-slate-200 sm:w-16"></div>
             <div class="flex items-center gap-2 text-slate-400">
@@ -74,239 +70,189 @@
                     @endif
                 </div>
 
-                {{-- Location + sort --}}
+                {{-- Location --}}
                 <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-4">
                     <div class="text-sm">
                         @if ($hasLocation)
                             <span class="font-medium text-slate-700">Showing vendors near your current location</span>
                         @else
-                            <span class="text-slate-500">Share your location to see the nearest vendors and accurate delivery estimates.</span>
+                            <span class="text-slate-500">Share your location to see the nearest complete vendors and accurate delivery estimates.</span>
                         @endif
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <button
-                            type="button"
-                            id="use-my-location"
-                            class="rounded-lg border border-brandGreen px-3 py-1.5 text-xs font-semibold text-brandNavy hover:bg-brandGreen/5"
-                        >
-                            Use my location
-                        </button>
-
-                        <form method="GET" action="{{ route('marketplace.checkout.vendor.index') }}" class="flex items-center gap-1">
-                            <input type="hidden" name="lat" value="{{ request('lat') }}">
-                            <input type="hidden" name="lng" value="{{ request('lng') }}">
-                            <select name="sort" onchange="this.form.submit()" class="rounded-lg border border-slate-300 px-2 py-1.5 text-xs">
-                                <option value="recommended" {{ $sort === 'recommended' ? 'selected' : '' }}>Recommended</option>
-                                <option value="distance" {{ $sort === 'distance' ? 'selected' : '' }}>Nearest first</option>
-                                <option value="price" {{ $sort === 'price' ? 'selected' : '' }}>Lowest price</option>
-                            </select>
-                        </form>
-                    </div>
+                    <button
+                        type="button"
+                        id="use-my-location"
+                        class="rounded-lg border border-brandGreen px-3 py-1.5 text-xs font-semibold text-brandNavy hover:bg-brandGreen/5"
+                    >
+                        Use my location
+                    </button>
                 </div>
 
-                {{-- Availability banner --}}
-                @if ($allSelectable)
-                    <div class="mb-6 flex items-center gap-2 rounded-xl border border-brandGreen/30 bg-brandGreen/10 p-4 text-sm font-medium text-brandNavy">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-brandGreen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        All items in stock and ready for delivery.
+                @if ($eligibleVendors->isEmpty())
+                    {{-- No single vendor can fulfil the complete cart --}}
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-5">
+                        <div class="flex items-start gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+
+                            <div>
+                                <p class="font-semibold text-amber-900">
+                                    No single vendor currently has all the products and quantities in your cart.
+                                </p>
+                                <p class="mt-1 text-sm text-amber-800">
+                                    You cannot complete this order until one vendor can fulfil the entire cart. Please adjust your cart, change your delivery location, or check again later.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <a href="{{ route('shop.checkout.cart.index') }}" class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100">
+                                Adjust Cart
+                            </a>
+
+                            <button type="button" id="use-my-location-2" class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100">
+                                Change Delivery Location
+                            </button>
+
+                            <button type="button" onclick="window.location.reload()" class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100">
+                                Try Again Later
+                            </button>
+
+                            <a href="{{ route('shop.home.index') }}" class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100">
+                                Return to Shopping
+                            </a>
+                        </div>
                     </div>
                 @else
-                    <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                        Some items are unavailable from any vendor near you right now. Please update your cart before continuing.
+                    <div class="mb-4 flex items-center gap-2 rounded-xl border border-brandGreen/30 bg-brandGreen/10 p-4 text-sm font-medium text-brandNavy">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 text-brandGreen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Only vendors with every item and quantity in your cart are shown below.
                     </div>
-                @endif
 
-                <p class="mb-4 text-lg font-semibold text-brandNavy">Select a Nearest Vendor</p>
-                <p class="-mt-3 mb-4 text-xs text-slate-400">Recommended vendors that have your items in stock</p>
+                    <p class="mb-1 text-lg font-semibold text-brandNavy">Choose a Vendor for Your Whole Order</p>
+                    <p class="mb-4 text-xs text-slate-400">One vendor fulfils your entire order - not split across stores.</p>
 
-                <form method="POST" action="{{ route('marketplace.checkout.vendor.store') }}" id="vendor-form">
-                    @csrf
+                    <form method="POST" action="{{ route('marketplace.checkout.vendor.store') }}" id="vendor-form">
+                        @csrf
 
-                    @foreach ($products as $row)
-                        <div class="mb-8">
-                            <h3 class="mb-3 flex items-center gap-2 font-semibold text-slate-800">
-                                {{ $row['cart_item']->name }}
-                                <span class="font-normal text-slate-400">&times; {{ $row['cart_item']->quantity }}</span>
-                            </h3>
-
-                            @if ($row['offers']->isEmpty())
-                                <p class="rounded-lg border border-slate-200 p-4 text-sm text-slate-400">No vendor currently stocks this item.</p>
-                            @else
-                                <div class="space-y-3">
-                                    @foreach ($row['offers'] as $offer)
-                                        <label
-                                            class="vendor-option-label flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition sm:flex-row sm:items-center sm:justify-between {{ (int) $row['selected_seller_id'] === (int) $offer->seller_id ? 'border-brandGreen bg-brandGreen/5 ring-1 ring-brandGreen' : 'border-slate-200 hover:border-slate-300' }}"
-                                            data-product-id="{{ $row['cart_item']->product_id }}"
+                        <div class="space-y-3">
+                            @foreach ($eligibleVendors as $row)
+                                <label
+                                    class="vendor-option-label flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition sm:flex-row sm:items-center sm:justify-between {{ (int) $selectedSellerId === $row->seller->id ? 'border-brandGreen bg-brandGreen/5 ring-1 ring-brandGreen' : 'border-slate-200 hover:border-slate-300' }}"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <input
+                                            type="radio"
+                                            name="seller_id"
+                                            value="{{ $row->seller->id }}"
+                                            class="mt-1 h-4 w-4 accent-brandGreen vendor-radio"
+                                            data-cart-total="{{ $row->cart_total }}"
+                                            data-delivery-fee="{{ $row->delivery_fee }}"
+                                            data-shop-name="{{ $row->seller->shop_name }}"
+                                            onchange="marketplaceRecalculate()"
+                                            {{ (int) $selectedSellerId === $row->seller->id ? 'checked' : '' }}
                                         >
-                                            <div class="flex items-start gap-3">
-                                                <input
-                                                    type="radio"
-                                                    name="vendor[{{ $row['cart_item']->product_id }}]"
-                                                    value="{{ $offer->seller_id }}"
-                                                    class="mt-1 h-4 w-4 accent-brandGreen vendor-radio"
-                                                    data-product-id="{{ $row['cart_item']->product_id }}"
-                                                    data-price="{{ (float) $offer->price }}"
-                                                    data-delivery-fee="{{ (float) $offer->delivery_fee }}"
-                                                    data-shop-name="{{ $offer->shop_name }}"
-                                                    onchange="marketplaceRecalculate()"
-                                                    {{ (int) $row['selected_seller_id'] === (int) $offer->seller_id ? 'checked' : '' }}
-                                                >
 
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="flex flex-wrap items-center gap-2">
-                                                        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-4.5-7-8.25-7-11.5A7 7 0 0119 9.5c0 3.25-2.5 7-7 11.5z" /><circle cx="12" cy="9.5" r="2.25" /></svg>
-                                                        </span>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-4.5-7-8.25-7-11.5A7 7 0 0119 9.5c0 3.25-2.5 7-7 11.5z" /><circle cx="12" cy="9.5" r="2.25" /></svg>
+                                                </span>
 
-                                                        <span class="font-medium text-slate-800">{{ $offer->shop_name }}</span>
+                                                <span class="font-medium text-slate-800">{{ $row->seller->shop_name }}</span>
 
-                                                        @if ($offer->is_nearest ?? false)
-                                                            <span class="rounded-full bg-brandGreen/10 px-2 py-0.5 text-[11px] font-semibold text-brandGreen">Nearest</span>
-                                                        @endif
+                                                <span class="rounded-full bg-brandGreen/10 px-2 py-0.5 text-[11px] font-semibold text-brandGreen">Complete cart available</span>
 
-                                                        @if (($offer->is_fastest ?? false) && ! ($offer->is_nearest ?? false))
-                                                            <span class="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600">Fastest</span>
-                                                        @endif
-
-                                                        @if (($offer->is_lowest_fee ?? false) && ! ($offer->is_nearest ?? false))
-                                                            <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Lowest Fee</span>
-                                                        @endif
-                                                    </div>
-
-                                                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                                                        @if (isset($offer->distance_km))
-                                                            <span>{{ number_format($offer->distance_km, 1) }} km away</span>
-                                                        @endif
-
-                                                        <span class="flex items-center gap-1">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" d="M12 7v5l3 3" /></svg>
-                                                            {{ $offer->eta_label }}
-                                                        </span>
-
-                                                        <span class="flex items-center gap-1 text-amber-500">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z" /></svg>
-                                                            <span class="text-slate-600">{{ number_format((float) $offer->rating, 1) }}</span>
-                                                        </span>
-
-                                                        <span>Delivery {{ core()->formatPrice($offer->delivery_fee) }}</span>
-
-                                                        <span class="font-medium text-brandGreen">{{ $offer->quantity }} in stock</span>
-                                                    </div>
-                                                </div>
+                                                @if ($loop->first)
+                                                    <span class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Recommended</span>
+                                                @endif
                                             </div>
 
-                                            <div class="shrink-0 text-right sm:pl-3">
-                                                <p class="font-semibold text-slate-800">{{ core()->formatPrice($offer->price) }}</p>
+                                            <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                                                @if ($row->distance_km !== null)
+                                                    <span>{{ number_format($row->distance_km, 1) }} km away</span>
+                                                @endif
+
+                                                <span class="flex items-center gap-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" d="M12 7v5l3 3" /></svg>
+                                                    {{ $row->eta_label }}
+                                                </span>
+
+                                                <span class="flex items-center gap-1 text-amber-500">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01z" /></svg>
+                                                    <span class="text-slate-600">{{ number_format((float) $row->seller->rating, 1) }}</span>
+                                                </span>
+
+                                                <span>Delivery {{ core()->formatPrice($row->delivery_fee) }}</span>
                                             </div>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div class="shrink-0 text-right sm:pl-3">
+                                        <p class="font-semibold text-slate-800">{{ core()->formatPrice($row->cart_total) }}</p>
+                                        <p class="text-[11px] text-slate-400">Full cart total</p>
+                                    </div>
+                                </label>
+                            @endforeach
                         </div>
-                    @endforeach
-                </form>
+                    </form>
+                @endif
             </div>
 
             {{-- Order summary --}}
             <aside class="h-fit min-w-0 rounded-xl border border-slate-200 p-5 lg:sticky lg:top-24">
                 <h3 class="mb-3 font-semibold text-slate-800">Order Summary</h3>
 
-                <ul class="max-h-64 space-y-3 overflow-y-auto text-sm" id="order-summary-items">
-                    @foreach ($products as $row)
-                        @php
-                            $product = $row['cart_item']->product;
-                            $selectedOffer = $row['offers']->firstWhere('seller_id', (int) $row['selected_seller_id']);
-                            $lineTotal = ($selectedOffer->price ?? $row['cart_item']->price) * $row['cart_item']->quantity;
-                        @endphp
-
-                        <li class="flex items-center gap-3" data-summary-row data-product-id="{{ $row['cart_item']->product_id }}" data-quantity="{{ $row['cart_item']->quantity }}">
-                            <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-50 text-slate-300">
-                                @if ($product?->base_image_url)
-                                    <img src="{{ $product->base_image_url }}" alt="{{ $row['cart_item']->name }}" class="h-full w-full object-cover">
-                                @else
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h16v16H4V4zm4 4h8v8H8V8z" /></svg>
-                                @endif
-                            </div>
-
+                <ul class="max-h-64 space-y-3 overflow-y-auto text-sm">
+                    @foreach ($lines as $line)
+                        <li class="flex items-center gap-3">
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-slate-700">{{ $row['cart_item']->name }} &times; {{ $row['cart_item']->quantity }}</p>
-                                <p class="truncate text-xs text-slate-400" data-summary-vendor>{{ $selectedOffer->shop_name ?? '' }}</p>
+                                <p class="truncate text-slate-700">{{ $line->name }} &times; {{ $line->quantity }}</p>
                             </div>
-
-                            <span class="shrink-0 font-medium text-slate-700" data-summary-line-total>{{ core()->formatPrice($lineTotal) }}</span>
                         </li>
                     @endforeach
                 </ul>
 
-                <div class="mt-4 border-t border-slate-100 pt-4">
-                    <div class="flex items-center gap-2">
-                        <input
-                            type="text"
-                            id="promo-code-input"
-                            placeholder="Enter promo code"
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brandGreen focus:outline-none"
-                        >
-                        <button
-                            type="button"
-                            id="promo-apply-btn"
-                            onclick="marketplacePromoApply()"
-                            class="shrink-0 rounded-lg bg-brandNavy px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
-                        >
-                            Apply
-                        </button>
-                    </div>
-                    <p id="promo-message" class="mt-1.5 hidden text-xs"></p>
-                </div>
-
-                <div class="mt-4 space-y-1.5 border-t border-slate-100 pt-4 text-sm">
-                    <div class="flex justify-between text-slate-600">
-                        <span>Subtotal</span>
-                        <span id="summary-subtotal">{{ core()->formatPrice(collect($products)->sum(fn ($row) => ($row['offers']->firstWhere('seller_id', (int) $row['selected_seller_id'])->price ?? $row['cart_item']->price) * $row['cart_item']->quantity)) }}</span>
-                    </div>
-
-                    <div class="flex justify-between text-slate-600">
-                        <span>Delivery Fee</span>
-                        <span id="summary-delivery-fee">{{ core()->formatPrice(collect($products)->map(fn ($row) => (int) $row['selected_seller_id'])->unique()->map(fn ($sellerId) => collect($products)->flatMap(fn ($row) => $row['offers'])->firstWhere('seller_id', $sellerId)?->delivery_fee ?? 0)->sum()) }}</span>
-                    </div>
-
-                    @if ($cart->discount_amount > 0)
-                        <div class="flex justify-between text-brandGreen">
-                            <span>Discount</span>
-                            <span>&minus; {{ core()->formatPrice($cart->discount_amount) }}</span>
-                        </div>
-                    @endif
-
-                    @if ($cart->tax_total > 0)
+                @if ($eligibleVendors->isNotEmpty())
+                    <div class="mt-4 space-y-1.5 border-t border-slate-100 pt-4 text-sm">
                         <div class="flex justify-between text-slate-600">
-                            <span>Tax</span>
-                            <span>{{ core()->formatPrice($cart->tax_total) }}</span>
+                            <span>Vendor</span>
+                            <span id="summary-vendor">{{ $eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->seller->shop_name }}</span>
                         </div>
-                    @endif
-                </div>
 
-                <div class="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
-                    <span class="font-semibold text-slate-800">Total</span>
-                    <span class="text-lg font-bold text-brandGreen" id="summary-total">
-                        {{ core()->formatPrice(
-                            collect($products)->sum(fn ($row) => ($row['offers']->firstWhere('seller_id', (int) $row['selected_seller_id'])->price ?? $row['cart_item']->price) * $row['cart_item']->quantity)
-                            + collect($products)->map(fn ($row) => (int) $row['selected_seller_id'])->unique()->map(fn ($sellerId) => collect($products)->flatMap(fn ($row) => $row['offers'])->firstWhere('seller_id', $sellerId)?->delivery_fee ?? 0)->sum()
-                            - $cart->discount_amount
-                            + $cart->tax_total
-                        ) }}
-                    </span>
-                </div>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Cart Subtotal</span>
+                            <span id="summary-subtotal">{{ core()->formatPrice($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->cart_total ?? 0) }}</span>
+                        </div>
 
-                <p class="mt-1 text-[11px] text-slate-400">Final total is confirmed securely at payment.</p>
+                        <div class="flex justify-between text-slate-600">
+                            <span>Delivery Fee</span>
+                            <span id="summary-delivery-fee">{{ core()->formatPrice($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->delivery_fee ?? 0) }}</span>
+                        </div>
+                    </div>
 
-                <button
-                    type="submit"
-                    form="vendor-form"
-                    {{ $allSelectable ? '' : 'disabled' }}
-                    class="mt-4 w-full rounded-xl bg-brandGreen py-3 font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                    Proceed to Payment
-                </button>
+                    <div class="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
+                        <span class="font-semibold text-slate-800">Total</span>
+                        <span class="text-lg font-bold text-brandGreen" id="summary-total">
+                            {{ core()->formatPrice(
+                                ($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->cart_total ?? 0)
+                                + ($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->delivery_fee ?? 0)
+                            ) }}
+                        </span>
+                    </div>
+
+                    <p class="mt-1 text-[11px] text-slate-400">Final total is confirmed securely at payment.</p>
+
+                    <button
+                        type="submit"
+                        form="vendor-form"
+                        class="mt-4 w-full rounded-xl bg-brandGreen py-3 font-semibold text-white transition hover:opacity-90"
+                    >
+                        Continue with This Vendor
+                    </button>
+                @else
+                    <p class="mt-4 text-sm text-slate-500">Adjust your cart or check back later to see available vendors.</p>
+                @endif
 
                 <p class="mt-3 flex items-center gap-1.5 text-[11px] text-slate-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
@@ -318,12 +264,12 @@
 
     <script>
         // Delegated on document, not attached directly to the button: this
-        // page's Vue-driven vendor list re-renders shortly after mount
-        // (live recalculation, availability updates), which replaces the
-        // button's DOM node and silently drops a directly-attached
-        // listener. A delegated listener on a stable ancestor survives that.
+        // page's Vue-driven shell re-renders shortly after mount, which can
+        // replace the button's DOM node and silently drop a directly
+        // attached listener. A delegated listener on a stable ancestor
+        // survives that.
         document.addEventListener('click', function (event) {
-            if (! event.target.closest('#use-my-location')) {
+            if (! event.target.closest('#use-my-location') && ! event.target.closest('#use-my-location-2')) {
                 return;
             }
 
@@ -331,7 +277,7 @@
                 return;
             }
 
-            const button = event.target.closest('#use-my-location');
+            const button = event.target.closest('#use-my-location') || event.target.closest('#use-my-location-2');
             const originalText = button.textContent;
             button.disabled = true;
             button.textContent = 'Detecting your location...';
@@ -350,7 +296,7 @@
             );
         });
 
-        // Live-recalculate the order summary as the customer picks vendors.
+        // Live-recalculate the order summary as the customer picks a vendor.
         (function () {
             const currencySymbol = "{{ core()->getCurrentCurrency()->symbol ?? '' }}";
 
@@ -358,36 +304,18 @@
                 return currencySymbol + amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             }
 
-            const staticDiscount = {{ (float) $cart->discount_amount }};
-            const staticTax = {{ (float) $cart->tax_total }};
-
             function recalculate() {
-                let subtotal = 0;
-                const sellerFees = {};
+                const checked = document.querySelector('.vendor-radio:checked');
 
-                document.querySelectorAll('[data-summary-row]').forEach(row => {
-                    const productId = row.dataset.productId;
-                    const quantity = parseFloat(row.dataset.quantity);
-                    const checked = document.querySelector(`.vendor-radio[data-product-id="${productId}"]:checked`);
+                if (! checked) return;
 
-                    if (! checked) return;
+                const cartTotal = parseFloat(checked.dataset.cartTotal);
+                const deliveryFee = parseFloat(checked.dataset.deliveryFee);
 
-                    const price = parseFloat(checked.dataset.price);
-                    const lineTotal = price * quantity;
-                    subtotal += lineTotal;
-
-                    sellerFees[checked.value] = parseFloat(checked.dataset.deliveryFee);
-
-                    row.querySelector('[data-summary-line-total]').textContent = formatPrice(lineTotal);
-                    row.querySelector('[data-summary-vendor]').textContent = checked.dataset.shopName;
-                });
-
-                const deliveryFee = Object.values(sellerFees).reduce((sum, fee) => sum + fee, 0);
-                const total = subtotal + deliveryFee - staticDiscount + staticTax;
-
-                document.getElementById('summary-subtotal').textContent = formatPrice(subtotal);
+                document.getElementById('summary-vendor').textContent = checked.dataset.shopName;
+                document.getElementById('summary-subtotal').textContent = formatPrice(cartTotal);
                 document.getElementById('summary-delivery-fee').textContent = formatPrice(deliveryFee);
-                document.getElementById('summary-total').textContent = formatPrice(total);
+                document.getElementById('summary-total').textContent = formatPrice(cartTotal + deliveryFee);
 
                 document.querySelectorAll('.vendor-option-label').forEach(label => {
                     const radio = label.querySelector('.vendor-radio');
@@ -402,43 +330,6 @@
             }
 
             window.marketplaceRecalculate = recalculate;
-        })();
-
-        // Promo code - reuses the real cart coupon API.
-        (function () {
-            function apply() {
-                const input = document.getElementById('promo-code-input');
-                const button = document.getElementById('promo-apply-btn');
-                const message = document.getElementById('promo-message');
-
-                if (! input || ! button || ! message || ! window.axios) return;
-
-                const code = input.value.trim();
-
-                if (! code) return;
-
-                button.disabled = true;
-                button.textContent = 'Applying...';
-
-                window.axios.post('{{ route('shop.api.checkout.cart.coupon.apply') }}', { code })
-                    .then(response => {
-                        message.textContent = response.data.message || 'Coupon applied.';
-                        message.className = 'mt-1.5 text-xs text-brandGreen';
-                        message.classList.remove('hidden');
-
-                        setTimeout(() => window.location.reload(), 1200);
-                    })
-                    .catch(error => {
-                        message.textContent = error.response?.data?.message || 'This coupon code is invalid.';
-                        message.className = 'mt-1.5 text-xs text-rose-600';
-                        message.classList.remove('hidden');
-
-                        button.disabled = false;
-                        button.textContent = 'Apply';
-                    });
-            }
-
-            window.marketplacePromoApply = apply;
         })();
     </script>
 </x-shop::layouts>
