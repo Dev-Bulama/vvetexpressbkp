@@ -11,6 +11,7 @@ use Spatie\ResponseCache\ResponseCache;
 use Webkul\CMS\Models\Page as CmsPage;
 use Webkul\Core\Models\Channel;
 use Webkul\Core\Models\CoreConfig;
+use Webkul\Marketplace\Console\Commands\SendVendorCatalogueRemindersCommand;
 use Webkul\Marketplace\Console\Commands\SyncErpNextProductsCommand;
 use Webkul\Marketplace\Http\Middleware\DeliveryAgentGuard;
 use Webkul\Marketplace\Http\Middleware\SellerGuard;
@@ -61,7 +62,10 @@ class MarketplaceServiceProvider extends ServiceProvider
         $this->clearResponseCacheOnStorefrontChanges();
 
         if ($this->app->runningInConsole()) {
-            $this->commands([SyncErpNextProductsCommand::class]);
+            $this->commands([
+                SyncErpNextProductsCommand::class,
+                SendVendorCatalogueRemindersCommand::class,
+            ]);
         }
 
         // Shared hosting rarely has a cron entry wired up by default - this
@@ -70,6 +74,8 @@ class MarketplaceServiceProvider extends ServiceProvider
         // fallback: `php artisan erpnext:sync-products`).
         $this->app->afterResolving(Schedule::class, function (Schedule $schedule) {
             $schedule->command(SyncErpNextProductsCommand::class)->hourly()->withoutOverlapping();
+
+            $schedule->command(SendVendorCatalogueRemindersCommand::class)->daily()->withoutOverlapping();
         });
     }
 

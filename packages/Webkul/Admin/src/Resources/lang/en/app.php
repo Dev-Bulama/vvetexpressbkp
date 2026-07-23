@@ -5287,6 +5287,7 @@ return [
                 'booking-product' => 'Bookings',
                 'campaigns' => 'Campaigns',
                 'catalog' => 'Catalog',
+                'catalogue-coverage' => 'Catalogue Coverage',
                 'categories' => 'Categories',
                 'channels' => 'Channels',
                 'cms' => 'CMS',

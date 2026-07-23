@@ -418,5 +418,11 @@ return [
         'route' => 'marketplace.admin.sellers.index',
         'sort' => 1,
         'icon' => '',
+    ], [
+        'key' => 'marketplace.catalogue-coverage',
+        'name' => 'admin::app.components.layouts.sidebar.catalogue-coverage',
+        'route' => 'marketplace.admin.catalogue-coverage.index',
+        'sort' => 2,
+        'icon' => '',
     ],
 ];

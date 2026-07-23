@@ -99,4 +99,12 @@ return [
         'api_key' => env('ERPNEXT_API_KEY'),
         'api_secret' => env('ERPNEXT_API_SECRET'),
     ],
+
+    'marketplace_reminders' => [
+        'enabled' => env('MARKETPLACE_REMINDER_ENABLED', true),
+        'cooldown_days' => env('MARKETPLACE_REMINDER_COOLDOWN_DAYS', 7),
+        'coverage_threshold' => env('MARKETPLACE_REMINDER_COVERAGE_THRESHOLD', 50),
+        'min_missing_products' => env('MARKETPLACE_REMINDER_MIN_MISSING_PRODUCTS', 3),
+        'max_per_week' => env('MARKETPLACE_REMINDER_MAX_PER_WEEK', 1),
+    ],
 ];
