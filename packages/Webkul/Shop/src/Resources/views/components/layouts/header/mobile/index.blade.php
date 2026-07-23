@@ -512,7 +512,11 @@
                             :class="{'mb-2': category.children && category.children.length}"
                         >
                         <div class="flex items-center justify-between py-2 transition-colors duration-200 cursor-pointer">
-                            <a :href="category.url" class="text-base font-medium text-black">
+                            <a :href="category.url" class="flex items-center gap-3 text-base font-medium text-black">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path :d="iconPath(category.name)" />
+                                </svg>
+
                                 @{{ category.name }}
                             </a>
                         </div>
@@ -581,6 +585,9 @@
     </script>
 
     <script type="module">
+        const mobileDrawerCategoryIconKeywords = @json(\Webkul\Marketplace\Helpers\CategoryIcon::$keywords);
+        const mobileDrawerCategoryIconPaths = @json(\Webkul\Marketplace\Helpers\CategoryIcon::$paths);
+
         app.component('v-mobile-category', {
             template: '#v-mobile-category-template',
 
@@ -604,6 +611,18 @@
             },
 
             methods: {
+                iconPath(name) {
+                    const lower = (name || '').toLowerCase();
+
+                    for (const keyword in mobileDrawerCategoryIconKeywords) {
+                        if (lower.includes(keyword)) {
+                            return mobileDrawerCategoryIconPaths[mobileDrawerCategoryIconKeywords[keyword]] || mobileDrawerCategoryIconPaths['box'];
+                        }
+                    }
+
+                    return mobileDrawerCategoryIconPaths['box'];
+                },
+
                 initCategories() {
                     try {
                         const stored = localStorage.getItem('categories');
