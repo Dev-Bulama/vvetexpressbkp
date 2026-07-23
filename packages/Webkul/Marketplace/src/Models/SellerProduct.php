@@ -30,6 +30,7 @@ class SellerProduct extends Model implements SellerProductContract
         'product_id',
         'price',
         'quantity',
+        'reserved_quantity',
         'is_active',
     ];
 
@@ -39,8 +40,9 @@ class SellerProduct extends Model implements SellerProductContract
      * @var array<string, string>
      */
     protected $casts = [
-        'price'     => 'decimal:4',
-        'quantity'  => 'integer',
+        'price' => 'decimal:4',
+        'quantity' => 'integer',
+        'reserved_quantity' => 'integer',
         'is_active' => 'boolean',
     ];
 

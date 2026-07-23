@@ -120,6 +120,7 @@
             "Webkul\\DataGrid\\Tests\\": "packages/Webkul/DataGrid/tests",
             "Webkul\\EUWithdrawal\\Tests\\": "packages/Webkul/EUWithdrawal/tests",
             "Webkul\\Installer\\Tests\\": "packages/Webkul/Installer/tests",
+            "Webkul\\Marketplace\\Tests\\": "packages/Webkul/Marketplace/tests",
             "Webkul\\Payment\\Tests\\": "packages/Webkul/Payment/tests",
             "Webkul\\PayU\\Tests\\": "packages/Webkul/PayU/tests",
             "Webkul\\Razorpay\\Tests\\": "packages/Webkul/Razorpay/tests",
