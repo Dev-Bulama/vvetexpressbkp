@@ -21,6 +21,14 @@ class Seller extends Authenticatable implements SellerContract
     public const STATUS_SUSPENDED = 'suspended';
 
     /**
+     * Shop name of the one dedicated seller that owns every ERPNext-synced
+     * product (see SyncErpNextProductsCommand::systemSeller()). The
+     * storefront checks against this to hide vendor attribution for those
+     * products - it isn't a real vendor a customer should be shown.
+     */
+    public const SYSTEM_SELLER_SHOP_NAME = 'External Catalog';
+
+    /**
      * The table associated with the model.
      *
      * @var string
@@ -63,11 +71,11 @@ class Seller extends Authenticatable implements SellerContract
      * @var array<string, string>
      */
     protected $casts = [
-        'latitude'          => 'decimal:8',
-        'longitude'         => 'decimal:8',
-        'rating'            => 'decimal:1',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
+        'rating' => 'decimal:1',
         'email_verified_at' => 'datetime',
-        'password'          => 'hashed',
+        'password' => 'hashed',
     ];
 
     /**

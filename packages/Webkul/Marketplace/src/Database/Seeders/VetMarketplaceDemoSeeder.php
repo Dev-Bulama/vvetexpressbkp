@@ -139,18 +139,17 @@ class VetMarketplaceDemoSeeder extends Seeder
 
     /**
      * The homepage hero always renders one fixed, code-defined branded slide
-     * (packages/../resources/views/vendor/shop/home/index.blade.php) so the
-     * page never looks empty. This record is what lets an admin add real
-     * *additional* slides of their own through Bagisto's existing Theme
-     * Customization screen (Admin > Content > Themes) - it starts with zero
-     * images on purpose; we don't have real marketing creative to seed, and
-     * a placeholder/stock image would be exactly the kind of fake content
-     * this project avoids. The homepage template degrades gracefully
-     * (single slide, no carousel controls) until an admin uploads one.
+     * (packages/../resources/views/vendor/shop/home/index.blade.php) plus
+     * whatever slides are in this record, editable through Bagisto's
+     * existing Theme Customization screen (Admin > Content > Themes). Seeds
+     * three illustrated placeholder slides (public/vetexpress/hero/*.svg) so
+     * the carousel actually has something to auto-advance between out of
+     * the box - an admin can replace or remove them any time from that
+     * screen. Never overwrites images an admin has already customized here.
      */
     protected function seedHeroCarousel(Channel $channel): void
     {
-        ThemeCustomization::firstOrCreate(
+        $carousel = ThemeCustomization::firstOrCreate(
             [
                 'theme_code' => 'default',
                 'channel_id' => $channel->id,
@@ -163,6 +162,32 @@ class VetMarketplaceDemoSeeder extends Seeder
                 'options' => ['images' => []],
             ]
         );
+
+        if (! empty($carousel->options['images'] ?? [])) {
+            return;
+        }
+
+        $carousel->update([
+            'options' => [
+                'images' => [
+                    [
+                        'image' => 'vetexpress/hero/dog-cat-food.svg',
+                        'title' => 'Dog & Cat Food - Up to 30% Off',
+                        'link' => '#top-categories',
+                    ],
+                    [
+                        'image' => 'vetexpress/hero/vaccines.svg',
+                        'title' => 'Vaccines & Medications',
+                        'link' => '#top-categories',
+                    ],
+                    [
+                        'image' => 'vetexpress/hero/farm-poultry.svg',
+                        'title' => 'Farm & Poultry Supplies',
+                        'link' => '#top-categories',
+                    ],
+                ],
+            ],
+        ]);
     }
 
     /**

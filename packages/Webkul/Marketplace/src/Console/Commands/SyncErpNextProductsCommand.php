@@ -194,8 +194,8 @@ class SyncErpNextProductsCommand extends Command
         return Seller::firstOrCreate(
             ['email' => 'erpnext-sync@vetexpress.system'],
             [
-                'name' => 'External Catalog',
-                'shop_name' => 'External Catalog',
+                'name' => Seller::SYSTEM_SELLER_SHOP_NAME,
+                'shop_name' => Seller::SYSTEM_SELLER_SHOP_NAME,
                 'password' => bcrypt(str()->random(40)),
                 'status' => Seller::STATUS_APPROVED,
                 'rating' => 5.0,

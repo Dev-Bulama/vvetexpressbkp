@@ -455,28 +455,27 @@
                     }
                 });
 
-                // Flash deal countdowns
-                document.addEventListener('DOMContentLoaded', function () {
-                    const nodes = document.querySelectorAll('[data-countdown-to]');
+                // Flash deal countdowns. Vue's in-DOM template mount can
+                // replace this whole subtree at an unpredictable time
+                // relative to DOMContentLoaded, so the node list is never
+                // cached - it's re-queried fresh on every tick instead
+                // (see hero carousel / location button fixes for the same
+                // class of bug).
+                function tickCountdowns() {
+                    document.querySelectorAll('[data-countdown-to]').forEach(node => {
+                        const target = new Date(node.dataset.countdownTo).getTime();
+                        const diff = Math.max(0, target - Date.now());
 
-                    if (! nodes.length) return;
+                        const hours = Math.floor(diff / 3600000);
+                        const minutes = Math.floor((diff % 3600000) / 60000);
+                        const seconds = Math.floor((diff % 60000) / 1000);
 
-                    function tick() {
-                        nodes.forEach(node => {
-                            const target = new Date(node.dataset.countdownTo).getTime();
-                            const diff = Math.max(0, target - Date.now());
+                        node.textContent = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+                    });
+                }
 
-                            const hours = Math.floor(diff / 3600000);
-                            const minutes = Math.floor((diff % 3600000) / 60000);
-                            const seconds = Math.floor((diff % 60000) / 1000);
-
-                            node.textContent = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
-                        });
-                    }
-
-                    tick();
-                    setInterval(tick, 1000);
-                });
+                setInterval(tickCountdowns, 1000);
+                tickCountdowns();
 
                 // Marketplace wishlist / add-to-cart buttons (custom offer cards)
                 window.marketplaceAddToWishlist = function (productId, btn) {

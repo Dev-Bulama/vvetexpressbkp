@@ -9,6 +9,8 @@
     $totalReviews = $product ? $reviewHelper->getTotalReviews($product) : 0;
 
     $isNear = isset($offer->distance_km) && $offer->distance_km !== null && (float) $offer->distance_km < 5;
+
+    $isExternalCatalog = $offer->shop_name === \Webkul\Marketplace\Models\Seller::SYSTEM_SELLER_SHOP_NAME;
 @endphp
 
 <div class="relative flex h-full flex-col rounded-xl border border-slate-200 p-3 transition hover:border-brandGreen hover:shadow-sm">
@@ -55,10 +57,16 @@
         @endif
     </div>
 
-    <p class="mt-1 flex items-center gap-1 truncate text-xs text-slate-400">
-        {{ $offer->shop_name }}
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0 text-brandGreen" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 1.6 2.85-.3 1.2 2.6 2.6 1.2-.3 2.85L22 12l-1.6 2.4.3 2.85-2.6 1.2-1.2 2.6-2.85-.3L12 22l-2.4-1.6-2.85.3-1.2-2.6-2.6-1.2.3-2.85L2 12l1.6-2.4-.3-2.85 2.6-1.2 1.2-2.6 2.85.3z" /><path d="M9 12l2 2 4-4" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
-    </p>
+    @if ($isExternalCatalog)
+        <p class="mt-1 flex items-center gap-1 truncate text-xs {{ $offer->quantity > 0 ? 'text-brandGreen' : 'text-rose-500' }}">
+            {{ $offer->quantity > 0 ? 'In stock' : 'Out of stock' }}
+        </p>
+    @else
+        <p class="mt-1 flex items-center gap-1 truncate text-xs text-slate-400">
+            {{ $offer->shop_name }}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0 text-brandGreen" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 1.6 2.85-.3 1.2 2.6 2.6 1.2-.3 2.85L22 12l-1.6 2.4.3 2.85-2.6 1.2-1.2 2.6-2.85-.3L12 22l-2.4-1.6-2.85.3-1.2-2.6-2.6-1.2.3-2.85L2 12l1.6-2.4-.3-2.85 2.6-1.2 1.2-2.6 2.85.3z" /><path d="M9 12l2 2 4-4" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </p>
+    @endif
 
     @if (isset($offer->distance_km) && $offer->distance_km !== null)
         <p class="mt-0.5 text-xs text-slate-400">

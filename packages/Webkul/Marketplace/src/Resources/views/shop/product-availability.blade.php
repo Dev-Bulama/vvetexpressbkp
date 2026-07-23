@@ -10,6 +10,10 @@
 
     $deliveryLabel = session('marketplace.customer_location.label', 'Set your location');
     $widgetId = 'vendor-availability-'.$product->id;
+
+    $vendorLabel = fn ($offer) => $offer->shop_name === \Webkul\Marketplace\Models\Seller::SYSTEM_SELLER_SHOP_NAME
+        ? 'In stock'
+        : $offer->shop_name;
 @endphp
 
 <div class="mt-3 rounded-lg border border-slate-200 text-sm">
@@ -37,7 +41,7 @@
                     Available from {{ $offers->count() }} nearby {{ Str::plural('vendor', $offers->count()) }}
                 </span>
                 <span class="block text-xs text-brandGreen">
-                    From {{ core()->formatPrice($offers->min('price')) }} &middot; best offer: {{ $offers->first()->shop_name }}
+                    From {{ core()->formatPrice($offers->min('price')) }} &middot; best offer: {{ $vendorLabel($offers->first()) }}
                 </span>
             </span>
 
@@ -49,7 +53,7 @@
                 <div class="flex items-center justify-between gap-3 px-4 py-2.5">
                     <div class="min-w-0">
                         <p class="truncate font-medium text-slate-800">
-                            {{ $offer->shop_name }}
+                            {{ $vendorLabel($offer) }}
 
                             @if ($loop->first)
                                 <span class="ml-1 rounded-full bg-brandGreen/10 px-1.5 py-0.5 text-[10px] font-semibold text-brandGreen">Best</span>
