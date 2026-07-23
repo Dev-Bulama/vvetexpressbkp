@@ -1,6 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    content: ["./src/Resources/**/*.blade.php", "./src/Resources/**/*.js"],
+    content: [
+        "./src/Resources/**/*.blade.php",
+        "./src/Resources/**/*.js",
+        // Marketplace ships its own admin-scoped Blade views (sellers, and
+        // more to come) that render inside this package's <x-admin::layouts>
+        // shell - without scanning them here, any Tailwind class they use
+        // that isn't independently used somewhere in Admin's own views
+        // never makes it into the compiled CSS and silently does nothing.
+        "../Marketplace/src/Resources/views/admin/**/*.blade.php",
+    ],
 
     theme: {
         container: {

@@ -1,66 +1,92 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Sellers - Marketplace</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; }
-        header { background: #11455B; color: #fff; padding: 16px 24px; }
-        main { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
-        .tabs { margin-bottom: 16px; }
-        .tabs a { display: inline-block; padding: 6px 14px; border-radius: 999px; font-size: 13px; text-decoration: none; color: #374151; background: #e5e7eb; margin-right: 8px; }
-        .tabs a.active { background: #11455B; color: #fff; }
-        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
-        th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
-        th { background: #f8fafc; }
-        .badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; }
-        .badge.pending { background: #fef9c3; color: #854d0e; }
-        .badge.approved { background: #dcfce7; color: #166534; }
-        .badge.suspended { background: #fee2e2; color: #991b1b; }
-        .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; background: #dcfce7; color: #166534; }
-        a.view { color: #2FCB6E; text-decoration: none; }
-        .empty { padding: 24px; text-align: center; color: #6b7280; background: #fff; border-radius: 8px; }
-    </style>
-</head>
-<body>
-    <header>Marketplace &middot; Sellers</header>
+<x-admin::layouts>
+    <x-slot:title>
+        Marketplace Sellers
+    </x-slot>
 
-    <main>
-        @if (session('success'))
-            <div class="msg">{{ session('success') }}</div>
-        @endif
+    <div class="flex items-center justify-between gap-4 max-sm:flex-wrap">
+        <p class="py-3 text-xl font-bold text-gray-800 dark:text-white">
+            Sellers
+        </p>
+    </div>
 
-        <div class="tabs">
-            <a href="{{ route('marketplace.admin.sellers.index') }}" class="{{ $status ? '' : 'active' }}">All</a>
-            <a href="{{ route('marketplace.admin.sellers.index', ['status' => 'pending']) }}" class="{{ $status === 'pending' ? 'active' : '' }}">Pending</a>
-            <a href="{{ route('marketplace.admin.sellers.index', ['status' => 'approved']) }}" class="{{ $status === 'approved' ? 'active' : '' }}">Approved</a>
-            <a href="{{ route('marketplace.admin.sellers.index', ['status' => 'suspended']) }}" class="{{ $status === 'suspended' ? 'active' : '' }}">Suspended</a>
+    @if (session('success'))
+        <div class="mb-4 rounded-md bg-green-100 px-4 py-3 text-sm text-green-700 dark:bg-green-900 dark:text-green-200">
+            {{ session('success') }}
         </div>
+    @endif
 
+    <div class="mb-4 flex flex-wrap gap-2">
+        @php
+            $tabs = [
+                null => 'All',
+                'pending' => 'Pending',
+                'approved' => 'Approved',
+                'suspended' => 'Suspended',
+            ];
+        @endphp
+
+        @foreach ($tabs as $value => $label)
+            <a
+                href="{{ route('marketplace.admin.sellers.index', $value ? ['status' => $value] : []) }}"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition-all
+                    {{ $status === $value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700' }}"
+            >
+                {{ $label }}
+            </a>
+        @endforeach
+    </div>
+
+    <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         @if ($sellers->isEmpty())
-            <div class="empty">No sellers found.</div>
+            <p class="p-8 text-center text-gray-500 dark:text-gray-400">No sellers found.</p>
         @else
-            <table>
+            <table class="min-w-full text-left text-sm">
                 <thead>
-                    <tr><th>Shop</th><th>Owner</th><th>Email</th><th>City</th><th>Status</th><th></th></tr>
+                    <tr class="border-b border-gray-200 text-gray-600 dark:border-gray-800 dark:text-gray-300">
+                        <th class="px-4 py-3 font-semibold">Shop</th>
+                        <th class="px-4 py-3 font-semibold">Owner</th>
+                        <th class="px-4 py-3 font-semibold">Email</th>
+                        <th class="px-4 py-3 font-semibold">City</th>
+                        <th class="px-4 py-3 font-semibold">Status</th>
+                        <th class="px-4 py-3"></th>
+                    </tr>
                 </thead>
+
                 <tbody>
                     @foreach ($sellers as $seller)
-                        <tr>
-                            <td>{{ $seller->shop_name }}</td>
-                            <td>{{ $seller->name }}</td>
-                            <td>{{ $seller->email }}</td>
-                            <td>{{ $seller->city }}</td>
-                            <td><span class="badge {{ $seller->status }}">{{ ucfirst($seller->status) }}</span></td>
-                            <td><a class="view" href="{{ route('marketplace.admin.sellers.edit', $seller->id) }}">Manage</a></td>
+                        <tr class="border-b border-gray-100 text-gray-700 last:border-0 dark:border-gray-800 dark:text-gray-300">
+                            <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">{{ $seller->shop_name }}</td>
+                            <td class="px-4 py-3">{{ $seller->name }}</td>
+                            <td class="px-4 py-3">{{ $seller->email }}</td>
+                            <td class="px-4 py-3">{{ $seller->city }}</td>
+                            <td class="px-4 py-3">
+                                <span
+                                    @class([
+                                        'rounded-full px-2.5 py-1 text-xs font-medium',
+                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' => $seller->status === 'pending',
+                                        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' => $seller->status === 'approved',
+                                        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' => $seller->status === 'suspended',
+                                    ])
+                                >
+                                    {{ ucfirst($seller->status) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <a
+                                    class="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                    href="{{ route('marketplace.admin.sellers.edit', $seller->id) }}"
+                                >
+                                    Manage
+                                </a>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
-
-            <div style="margin-top:16px;">{{ $sellers->links() }}</div>
         @endif
-    </main>
-</body>
-</html>
+    </div>
+
+    <div class="mt-4">
+        {{ $sellers->links() }}
+    </div>
+</x-admin::layouts>

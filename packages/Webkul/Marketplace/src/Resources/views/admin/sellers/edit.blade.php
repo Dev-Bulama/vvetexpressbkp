@@ -1,78 +1,96 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>{{ $seller->shop_name }} - Marketplace</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: system-ui, sans-serif; background: #f4f5f7; margin: 0; }
-        header { background: #11455B; color: #fff; padding: 16px 24px; }
-        main { max-width: 600px; margin: 24px auto; padding: 0 16px; }
-        .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-        dl { display: grid; grid-template-columns: 140px 1fr; row-gap: 10px; font-size: 14px; }
-        dt { font-weight: 600; color: #374151; }
-        .badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; }
-        .badge.pending { background: #fef9c3; color: #854d0e; }
-        .badge.approved { background: #dcfce7; color: #166534; }
-        .badge.suspended { background: #fee2e2; color: #991b1b; }
-        .actions { margin-top: 24px; display: flex; gap: 10px; }
-        button { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        button.approve { background: #2FCB6E; color: #fff; }
-        button.suspend { background: #dc2626; color: #fff; }
-        button.pending { background: #ca8a04; color: #fff; }
-        .msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; background: #dcfce7; color: #166534; }
-        a.back { color: #2FCB6E; text-decoration: none; font-size: 13px; }
-    </style>
-</head>
-<body>
-    <header>Marketplace &middot; Sellers</header>
+<x-admin::layouts>
+    <x-slot:title>
+        {{ $seller->shop_name }} - Marketplace
+    </x-slot>
 
-    <main>
-        <p><a class="back" href="{{ route('marketplace.admin.sellers.index') }}">&larr; Back to sellers</a></p>
+    <p class="mb-3">
+        <a
+            class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+            href="{{ route('marketplace.admin.sellers.index') }}"
+        >
+            &larr; Back to sellers
+        </a>
+    </p>
 
-        @if (session('success'))
-            <div class="msg">{{ session('success') }}</div>
-        @endif
-
-        <div class="card">
-            <dl>
-                <dt>Shop Name</dt><dd>{{ $seller->shop_name }}</dd>
-                <dt>Owner</dt><dd>{{ $seller->name }}</dd>
-                <dt>Email</dt><dd>{{ $seller->email }}</dd>
-                <dt>Phone</dt><dd>{{ $seller->phone ?? '—' }}</dd>
-                <dt>Address</dt><dd>{{ $seller->address ?? '—' }}</dd>
-                <dt>City</dt><dd>{{ $seller->city ?? '—' }}</dd>
-                <dt>Coordinates</dt><dd>{{ $seller->latitude ?? '—' }}, {{ $seller->longitude ?? '—' }}</dd>
-                <dt>Status</dt><dd><span class="badge {{ $seller->status }}">{{ ucfirst($seller->status) }}</span></dd>
-                <dt>Joined</dt><dd>{{ $seller->created_at->format('d M Y') }}</dd>
-            </dl>
-
-            <div class="actions">
-                @if ($seller->status !== 'approved')
-                    <form method="POST" action="{{ route('marketplace.admin.sellers.update-status', $seller->id) }}">
-                        @csrf
-                        <input type="hidden" name="status" value="approved">
-                        <button class="approve" type="submit">Approve</button>
-                    </form>
-                @endif
-
-                @if ($seller->status !== 'suspended')
-                    <form method="POST" action="{{ route('marketplace.admin.sellers.update-status', $seller->id) }}">
-                        @csrf
-                        <input type="hidden" name="status" value="suspended">
-                        <button class="suspend" type="submit">Suspend</button>
-                    </form>
-                @endif
-
-                @if ($seller->status !== 'pending')
-                    <form method="POST" action="{{ route('marketplace.admin.sellers.update-status', $seller->id) }}">
-                        @csrf
-                        <input type="hidden" name="status" value="pending">
-                        <button class="pending" type="submit">Reset to Pending</button>
-                    </form>
-                @endif
-            </div>
+    @if (session('success'))
+        <div class="mb-4 rounded-md bg-green-100 px-4 py-3 text-sm text-green-700 dark:bg-green-900 dark:text-green-200">
+            {{ session('success') }}
         </div>
-    </main>
-</body>
-</html>
+    @endif
+
+    <div class="max-w-xl rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+        <dl class="flex flex-col gap-3 text-sm">
+            @php
+                $rows = [
+                    'Shop Name' => $seller->shop_name,
+                    'Owner' => $seller->name,
+                    'Email' => $seller->email,
+                    'Phone' => $seller->phone ?? '—',
+                    'Address' => $seller->address ?? '—',
+                    'City' => $seller->city ?? '—',
+                    'Coordinates' => ($seller->latitude ?? '—').', '.($seller->longitude ?? '—'),
+                ];
+            @endphp
+
+            @foreach ($rows as $label => $value)
+                <div class="flex items-center gap-4">
+                    <dt class="w-36 shrink-0 font-semibold text-gray-600 dark:text-gray-300">{{ $label }}</dt>
+                    <dd class="text-gray-800 dark:text-white">{{ $value }}</dd>
+                </div>
+            @endforeach
+
+            <div class="flex items-center gap-4">
+                <dt class="w-36 shrink-0 font-semibold text-gray-600 dark:text-gray-300">Status</dt>
+                <dd>
+                    <span
+                        @class([
+                            'rounded-full px-2.5 py-1 text-xs font-medium',
+                            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' => $seller->status === 'pending',
+                            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' => $seller->status === 'approved',
+                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' => $seller->status === 'suspended',
+                        ])
+                    >
+                        {{ ucfirst($seller->status) }}
+                    </span>
+                </dd>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <dt class="w-36 shrink-0 font-semibold text-gray-600 dark:text-gray-300">Joined</dt>
+                <dd class="text-gray-800 dark:text-white">{{ $seller->created_at->format('d M Y') }}</dd>
+            </div>
+        </dl>
+
+        <div class="mt-6 flex gap-2.5">
+            @if ($seller->status !== 'approved')
+                <form method="POST" action="{{ route('marketplace.admin.sellers.update-status', $seller->id) }}">
+                    @csrf
+                    <input type="hidden" name="status" value="approved">
+                    <button type="submit" class="rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                        Approve
+                    </button>
+                </form>
+            @endif
+
+            @if ($seller->status !== 'suspended')
+                <form method="POST" action="{{ route('marketplace.admin.sellers.update-status', $seller->id) }}">
+                    @csrf
+                    <input type="hidden" name="status" value="suspended">
+                    <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">
+                        Suspend
+                    </button>
+                </form>
+            @endif
+
+            @if ($seller->status !== 'pending')
+                <form method="POST" action="{{ route('marketplace.admin.sellers.update-status', $seller->id) }}">
+                    @csrf
+                    <input type="hidden" name="status" value="pending">
+                    <button type="submit" class="rounded-md bg-yellow-600 px-4 py-2 text-sm font-semibold text-white hover:bg-yellow-700">
+                        Reset to Pending
+                    </button>
+                </form>
+            @endif
+        </div>
+    </div>
+</x-admin::layouts>
