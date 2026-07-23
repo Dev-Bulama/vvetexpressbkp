@@ -115,6 +115,12 @@ class VetMarketplaceDemoSeeder extends Seeder
 
         $this->seedStoreSettings($channel);
 
+        // Independent of every step below (categories/products/sellers) -
+        // seeded early so it always runs even if a later step throws (flash
+        // deals re-pricing has a known pre-existing issue on repeat runs
+        // against already-seeded data).
+        $this->seedHeroCarousel($channel);
+
         $categoryRepository = app(CategoryRepository::class);
         $productRepository = app(ProductRepository::class);
 
@@ -131,8 +137,6 @@ class VetMarketplaceDemoSeeder extends Seeder
         $this->seedLogistics();
 
         $this->seedCarrierConfig($channel);
-
-        $this->seedHeroCarousel($channel);
 
         $this->command?->info('Vet marketplace demo data seeded: '.count($categoryIds).' categories, '.count($productIds).' products, '.count($sellerIds).' vendors.');
     }
