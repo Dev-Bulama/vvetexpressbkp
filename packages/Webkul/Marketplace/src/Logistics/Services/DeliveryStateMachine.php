@@ -3,6 +3,8 @@
 namespace Webkul\Marketplace\Logistics\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 use Webkul\Marketplace\Events\DeliveryStatusChanged;
 use Webkul\Marketplace\Models\Delivery;
 use Webkul\Marketplace\Models\DeliveryStatusHistory;
@@ -31,9 +33,9 @@ class DeliveryStateMachine
             );
         }
 
-        return DB::transaction(function () use ($delivery, $toStatus, $actorType, $actorId, $note) {
-            $fromStatus = $delivery->status;
+        $fromStatus = $delivery->status;
 
+        DB::transaction(function () use ($delivery, $toStatus, $fromStatus, $actorType, $actorId, $note) {
             $delivery->status = $toStatus;
             $this->stampTimestampFor($delivery, $toStatus);
             $delivery->save();
@@ -46,11 +48,28 @@ class DeliveryStateMachine
                 'actor_id' => $actorId,
                 'note' => $note,
             ]);
-
-            event(new DeliveryStatusChanged($delivery->fresh(), $fromStatus, $toStatus));
-
-            return $delivery;
         });
+
+        // Broadcasting is a real-time enhancement, not a precondition for the
+        // delivery itself existing - with QUEUE_CONNECTION=sync this call
+        // hits Reverb inline, and a broadcaster outage must never roll back
+        // (or, since this now runs after the transaction, orphan) an
+        // otherwise-successful status transition. This is also why it's
+        // dispatched after the transaction commits, not inside it: nothing
+        // should be notified of a status change that could still be rolled
+        // back.
+        try {
+            event(new DeliveryStatusChanged($delivery->fresh(), $fromStatus, $toStatus));
+        } catch (Throwable $e) {
+            Log::warning('Failed to broadcast delivery status change.', [
+                'delivery_id' => $delivery->id,
+                'from_status' => $fromStatus,
+                'to_status' => $toStatus,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $delivery;
     }
 
     private function stampTimestampFor(Delivery $delivery, string $status): void

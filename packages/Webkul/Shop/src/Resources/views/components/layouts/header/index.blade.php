@@ -18,9 +18,19 @@
     <button type="button" onclick="marketplaceOpenLocationModal()" class="flex items-center gap-1.5 hover:text-white">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-4.5-7-8.25-7-11.5A7 7 0 0119 9.5c0 3.25-2.5 7-7 11.5z" /><circle cx="12" cy="9.5" r="2.25" /></svg>
 
+        {{--
+            Always starts as the static default and is hydrated by JS
+            (location-modal.blade.php's updateLabels(), fetched via the
+            uncached /customer-location endpoint) right after load - never
+            rendered from session() directly here, since this page can be
+            served from Bagisto's full-page cache (RESPONSE_CACHE_ENABLED),
+            which is keyed by URL only, not by session. Baking a specific
+            customer's location into the cached HTML would freeze it there
+            for every other visitor of that same cached page.
+        --}}
         <span id="marketplace-location-label-utility">
             @lang('shop::app.components.layouts.header.utility.deliver-to')
-            <strong class="font-semibold">{{ session('marketplace.customer_location.label', 'Set location') }}</strong>
+            <strong class="font-semibold" id="marketplace-location-label-utility-value">Set location</strong>
         </span>
     </button>
 </div>
@@ -29,11 +39,61 @@
     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0 text-brandGreen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-4.5-7-8.25-7-11.5A7 7 0 0119 9.5c0 3.25-2.5 7-7 11.5z" /><circle cx="12" cy="9.5" r="2.25" /></svg>
 
     <span id="marketplace-location-label-mobile" class="truncate">
-        Deliver to: <strong class="font-semibold text-brandNavy">{{ session('marketplace.customer_location.label', 'Set location') }}</strong>
+        Deliver to: <strong class="font-semibold text-brandNavy" id="marketplace-location-label-mobile-value">Set location</strong>
     </span>
 </button>
 
 @include('shop::components.layouts.header.location-modal')
+
+<style>
+    /* Thin, brand-colored scrollbar for the horizontally-scrolling category
+       icon rows (desktop and mobile), instead of the default chunky OS
+       scrollbar. Firefox + WebKit only - browsers without support just keep
+       their native scrollbar, which is a fine fallback. */
+    .marketplace-category-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #2FCB6E transparent;
+    }
+
+    .marketplace-category-scroll::-webkit-scrollbar {
+        height: 5px;
+    }
+
+    .marketplace-category-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .marketplace-category-scroll::-webkit-scrollbar-thumb {
+        background-color: #2FCB6E;
+        border-radius: 999px;
+    }
+</style>
+
+<script>
+    // A brief, one-time nudge-right-then-back on the horizontally-scrolling
+    // category icon rows, so it's obvious there's more to scroll to without
+    // permanently auto-cycling a navigation menu (which would fight the
+    // user trying to actually pick a category with the mouse/finger).
+    window.marketplacePeekScroll = function (el) {
+        if (! el || el.scrollWidth <= el.clientWidth + 8) {
+            return;
+        }
+
+        if (el.dataset.peeked) {
+            return;
+        }
+
+        el.dataset.peeked = '1';
+
+        setTimeout(function () {
+            el.scrollTo({ left: 56, behavior: 'smooth' });
+
+            setTimeout(function () {
+                el.scrollTo({ left: 0, behavior: 'smooth' });
+            }, 700);
+        }, 600);
+    };
+</script>
 
 @if(core()->getCurrentChannel()->locales()->count() > 1 || core()->getCurrentChannel()->currencies()->count() > 1 )
     <div class="max-lg:hidden">

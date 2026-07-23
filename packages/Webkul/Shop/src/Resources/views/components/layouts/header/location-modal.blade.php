@@ -83,6 +83,42 @@
     (function () {
         let pendingCoords = null;
 
+        /**
+         * Turns GPS coordinates into a real, human-readable address via
+         * OpenStreetMap's Nominatim (free, keyless reverse-geocoding
+         * service - no GOOGLE_MAPS_API_KEY needed for this). Never fakes an
+         * address: on any failure or incomplete response, the caller just
+         * gets back whatever fields did resolve (possibly none), and the
+         * customer can still fill in / correct the rest manually below.
+         */
+        function reverseGeocode(lat, lng) {
+            const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='
+                + encodeURIComponent(lat) + '&lon=' + encodeURIComponent(lng) + '&addressdetails=1';
+
+            return fetch(url, { headers: { Accept: 'application/json' } })
+                .then(function (response) {
+                    if (! response.ok) {
+                        throw new Error('reverse geocode failed');
+                    }
+
+                    return response.json();
+                })
+                .then(function (data) {
+                    const address = data?.address || {};
+
+                    const streetParts = [address.house_number, address.road].filter(Boolean);
+
+                    return {
+                        address: streetParts.join(' ') || address.neighbourhood || address.suburb || '',
+                        city: address.city || address.town || address.village || address.county || '',
+                        state: address.state || '',
+                    };
+                })
+                .catch(function () {
+                    return {};
+                });
+        }
+
         window.marketplaceOpenLocationModal = function () {
             document.getElementById('marketplace-location-overlay').classList.remove('hidden');
             document.getElementById('marketplace-location-overlay').classList.add('flex');
@@ -114,10 +150,32 @@
                         lng: position.coords.longitude,
                     };
 
-                    button.disabled = false;
-                    button.textContent = 'Location detected - confirm address below';
+                    button.textContent = 'Location detected - looking up your address...';
 
-                    document.getElementById('loc-label').focus();
+                    reverseGeocode(pendingCoords.lat, pendingCoords.lng)
+                        .then(function (resolved) {
+                            if (resolved.address) {
+                                document.getElementById('loc-address').value = resolved.address;
+                            }
+
+                            if (resolved.city) {
+                                document.getElementById('loc-city').value = resolved.city;
+                            }
+
+                            if (resolved.state) {
+                                document.getElementById('loc-state').value = resolved.state;
+                            }
+
+                            if (! document.getElementById('loc-label').value) {
+                                document.getElementById('loc-label').value = 'Current location';
+                            }
+                        })
+                        .finally(function () {
+                            button.disabled = false;
+                            button.textContent = 'Location detected - confirm address below';
+
+                            document.getElementById('loc-label').focus();
+                        });
                 },
                 function (error) {
                     button.disabled = false;
@@ -137,11 +195,44 @@
         };
 
         function updateLabels(label) {
-            const utility = document.getElementById('marketplace-location-label-utility');
-            const mobile = document.getElementById('marketplace-location-label-mobile');
+            const utilityValue = document.getElementById('marketplace-location-label-utility-value');
+            const mobileValue = document.getElementById('marketplace-location-label-mobile-value');
 
-            if (utility) utility.innerHTML = 'Deliver to: <strong class="font-semibold">' + label + '</strong>';
-            if (mobile) mobile.innerHTML = 'Deliver to: <strong class="font-semibold text-brandNavy">' + label + '</strong>';
+            // textContent, not innerHTML - label can contain free text the
+            // customer typed themselves (the manual-entry "Label" field).
+            if (utilityValue) utilityValue.textContent = label;
+            if (mobileValue) mobileValue.textContent = label;
+        }
+
+        // The header markup always starts with the static "Set location"
+        // default (see the comment in header/index.blade.php on why), since
+        // this page can be served from Bagisto's full-page cache which is
+        // keyed by URL only, not by session. Hydrate the real label with a
+        // request the response-cache middleware always excludes (any
+        // request carrying X-Requested-With: XMLHttpRequest, which
+        // window.axios sends automatically).
+        // window.axios is set up by a `type="module"` Vite script, which is
+        // deferred and runs after this classic inline script - calling it
+        // immediately here would throw before it exists (and, since that
+        // throw is synchronous, would silently abort every statement below
+        // it in this same script block, including the marketplaceSubmitLocation
+        // definition the "Confirm delivery location" button depends on).
+        function hydrateLocationLabel() {
+            window.axios.get('{{ route('marketplace.location.show') }}')
+                .then(function (response) {
+                    const label = response.data?.location?.label;
+
+                    if (label) {
+                        updateLabels(label);
+                    }
+                })
+                .catch(function () {});
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', hydrateLocationLabel);
+        } else {
+            hydrateLocationLabel();
         }
 
         function postLocation(payload) {

@@ -22,6 +22,21 @@
 
     $rootCategory = app(\Webkul\Category\Repositories\CategoryRepository::class)->find($channel->root_category_id);
 
+    // Admin-managed extra hero slides (Admin > Content > Themes > "VetExpress
+    // Hero Carousel") on top of the always-present branded slide below. See
+    // VetMarketplaceDemoSeeder::seedHeroCarousel() for why this starts empty.
+    $heroCarousel = \Webkul\Theme\Models\ThemeCustomization::where('theme_code', 'default')
+        ->where('channel_id', $channel->id)
+        ->where('name', 'VetExpress Hero Carousel')
+        ->where('status', 1)
+        ->first();
+
+    $heroSlides = collect($heroCarousel->options['images'] ?? [])
+        ->filter(fn ($slide) => ! empty($slide['image']))
+        ->values();
+
+    $heroSlideCount = $heroSlides->count() + 1;
+
     // Hydrate the small set of offers we're about to render with their real
     // Product models (name/reviews/image are EAV-backed, not on the raw
     // offer row) - cheap here since both lists are capped at a dozen items.
@@ -100,39 +115,75 @@
                 </ul>
             </aside>
 
-            {{-- Hero banner --}}
-            <div class="relative overflow-hidden rounded-2xl bg-brandNavy p-8 text-white md:p-10">
-                <div class="pointer-events-none absolute inset-y-0 right-0 hidden w-[52%] md:block">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-6 top-4 h-9 w-9 text-brandGreen" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z" /></svg>
+            {{-- Hero banner - always shows the branded slide below, plus any
+                 extra slides an admin has added via Admin > Content >
+                 Themes > "VetExpress Hero Carousel". Auto-advances only
+                 when there's more than one slide. --}}
+            <div class="relative min-h-[320px] overflow-hidden rounded-2xl bg-brandNavy text-white md:min-h-[380px]" id="marketplace-hero">
+                <div
+                    class="flex h-full transition-transform duration-700 ease-out"
+                    id="marketplace-hero-track"
+                    style="width: {{ $heroSlideCount * 100 }}%;"
+                >
+                    <div class="h-full shrink-0 p-8 md:p-10" style="width: {{ 100 / $heroSlideCount }}%;">
+                        <div class="relative overflow-hidden">
+                            <div class="pointer-events-none absolute inset-y-0 right-0 hidden w-[52%] md:block">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-6 top-4 h-9 w-9 text-brandGreen" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 110-6 3 3 0 010 6z" /></svg>
 
-                    <div class="absolute right-8 top-16 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/15 text-white">
-                        @include('marketplace::components.category-icon', ['icon' => 'feed', 'class' => 'h-9 w-9'])
+                                <div class="absolute right-8 top-16 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/15 text-white">
+                                    @include('marketplace::components.category-icon', ['icon' => 'feed', 'class' => 'h-9 w-9'])
+                                </div>
+
+                                <div class="absolute right-40 top-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-brandGreen shadow-lg">
+                                    @include('marketplace::components.category-icon', ['icon' => 'paw', 'class' => 'h-8 w-8 text-white'])
+                                </div>
+
+                                <div class="absolute bottom-10 right-32 flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
+                                    @include('marketplace::components.category-icon', ['icon' => 'syringe', 'class' => 'h-10 w-10'])
+                                </div>
+
+                                <div class="absolute bottom-6 right-6 flex h-16 w-16 items-center justify-center rounded-xl bg-white/20">
+                                    @include('marketplace::components.category-icon', ['icon' => 'droplet', 'class' => 'h-8 w-8'])
+                                </div>
+                            </div>
+
+                            <div class="relative max-w-md">
+                                <span class="inline-block rounded-full bg-brandGreen px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Marketplace</span>
+                                <h1 class="mt-3 text-3xl font-bold leading-tight md:text-4xl">Everything You Need, Closer to You</h1>
+                                <p class="mt-3 text-white/80">Shop trusted vendors near you</p>
+                                <a
+                                    href="#top-categories"
+                                    class="mt-6 inline-block rounded-lg bg-brandGreen px-6 py-3 font-semibold text-white transition hover:opacity-90"
+                                >
+                                    Shop Now
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="absolute right-40 top-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-brandGreen shadow-lg">
-                        @include('marketplace::components.category-icon', ['icon' => 'paw', 'class' => 'h-8 w-8 text-white'])
-                    </div>
-
-                    <div class="absolute bottom-10 right-32 flex h-24 w-24 items-center justify-center rounded-full bg-white/10">
-                        @include('marketplace::components.category-icon', ['icon' => 'syringe', 'class' => 'h-10 w-10'])
-                    </div>
-
-                    <div class="absolute bottom-6 right-6 flex h-16 w-16 items-center justify-center rounded-xl bg-white/20">
-                        @include('marketplace::components.category-icon', ['icon' => 'droplet', 'class' => 'h-8 w-8'])
-                    </div>
+                    @foreach ($heroSlides as $slide)
+                        <a href="{{ $slide['link'] ?? '#' }}" class="block h-full shrink-0" style="width: {{ 100 / $heroSlideCount }}%;">
+                            <img
+                                src="{{ asset($slide['image']) }}"
+                                alt="{{ $slide['title'] ?? 'Promotion' }}"
+                                class="h-full w-full object-cover"
+                            >
+                        </a>
+                    @endforeach
                 </div>
 
-                <div class="relative max-w-md">
-                    <span class="inline-block rounded-full bg-brandGreen px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">Marketplace</span>
-                    <h1 class="mt-3 text-3xl font-bold leading-tight md:text-4xl">Everything You Need, Closer to You</h1>
-                    <p class="mt-3 text-white/80">Shop trusted vendors near you</p>
-                    <a
-                        href="#top-categories"
-                        class="mt-6 inline-block rounded-lg bg-brandGreen px-6 py-3 font-semibold text-white transition hover:opacity-90"
-                    >
-                        Shop Now
-                    </a>
-                </div>
+                @if ($heroSlideCount > 1)
+                    <div class="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5" id="marketplace-hero-dots">
+                        @for ($i = 0; $i < $heroSlideCount; $i++)
+                            <button
+                                type="button"
+                                class="h-2 w-2 rounded-full bg-white/50 transition hover:bg-white"
+                                data-hero-dot="{{ $i }}"
+                                aria-label="Go to slide {{ $i + 1 }}"
+                            ></button>
+                        @endfor
+                    </div>
+                @endif
             </div>
 
             {{-- Promo cards --}}
@@ -290,6 +341,86 @@
 
     @push('scripts')
         <script>
+            // Hero carousel: auto-advances only when there's more than one
+            // slide (the always-present branded slide plus any admin-added
+            // ones), pauses while the pointer is over it, and lets the
+            // pagination dots jump straight to a slide.
+            //
+            // This page's Vue app mounts onto an in-DOM template (no
+            // `template`/`render` option), which makes Vue compile and
+            // replace the whole mounted subtree with its own DOM nodes on
+            // mount - and that mount can finish at an unpredictable point
+            // relative to DOMContentLoaded (its `type="module"` script's
+            // top-level code can involve async work). Caching an element
+            // reference before that swap means every later update silently
+            // lands on a node Vue has already discarded, so every DOM
+            // access below re-queries live instead of caching anything.
+            (function () {
+                const dotCount = document.querySelectorAll('[data-hero-dot]').length;
+
+                if (dotCount < 2) {
+                    return;
+                }
+
+                let current = 0;
+                let timer = null;
+
+                function goTo(index) {
+                    const track = document.getElementById('marketplace-hero-track');
+                    const dots = document.querySelectorAll('[data-hero-dot]');
+
+                    if (! track || ! dots.length) {
+                        return;
+                    }
+
+                    current = (index + dots.length) % dots.length;
+                    track.style.transform = 'translateX(-' + (current * (100 / dots.length)) + '%)';
+
+                    dots.forEach((dot, i) => {
+                        dot.classList.toggle('bg-white', i === current);
+                        dot.classList.toggle('bg-white/50', i !== current);
+                    });
+                }
+
+                function startAutoplay() {
+                    stopAutoplay();
+                    timer = setInterval(() => goTo(current + 1), 5000);
+                }
+
+                function stopAutoplay() {
+                    if (timer) clearInterval(timer);
+                }
+
+                // Delegated listeners on document survive Vue replacing the
+                // hero/dots subtree, unlike listeners attached directly to
+                // the (possibly soon-to-be-discarded) elements themselves.
+                document.addEventListener('click', function (event) {
+                    const dot = event.target.closest('[data-hero-dot]');
+
+                    if (! dot) {
+                        return;
+                    }
+
+                    goTo(parseInt(dot.dataset.heroDot, 10));
+                    startAutoplay();
+                });
+
+                document.addEventListener('mouseover', function (event) {
+                    if (event.target.closest('#marketplace-hero')) {
+                        stopAutoplay();
+                    }
+                });
+
+                document.addEventListener('mouseout', function (event) {
+                    if (event.target.closest('#marketplace-hero') && ! event.relatedTarget?.closest?.('#marketplace-hero')) {
+                        startAutoplay();
+                    }
+                });
+
+                goTo(0);
+                startAutoplay();
+            })();
+
             (function () {
                 function updateFloatingCartCount(count) {
                     const badge = document.getElementById('floating-cart-count');

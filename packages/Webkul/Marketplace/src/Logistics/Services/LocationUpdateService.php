@@ -2,6 +2,8 @@
 
 namespace Webkul\Marketplace\Logistics\Services;
 
+use Illuminate\Support\Facades\Log;
+use Throwable;
 use Webkul\Marketplace\Events\AgentLocationUpdated;
 use Webkul\Marketplace\Models\Delivery;
 use Webkul\Marketplace\Models\DeliveryAgent;
@@ -64,7 +66,19 @@ class LocationUpdateService
             'recorded_at' => now(),
         ]);
 
-        event(new AgentLocationUpdated($delivery, $location));
+        // The location is already durably recorded above - a broadcaster
+        // outage (e.g. Reverb temporarily down) must not turn into a failed
+        // response for the agent's app, which would make them think their
+        // location update itself was rejected.
+        try {
+            event(new AgentLocationUpdated($delivery, $location));
+        } catch (Throwable $e) {
+            Log::warning('Failed to broadcast agent location update.', [
+                'delivery_id' => $delivery->id,
+                'delivery_agent_id' => $agent->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function isValidCoordinate(float $latitude, float $longitude): bool

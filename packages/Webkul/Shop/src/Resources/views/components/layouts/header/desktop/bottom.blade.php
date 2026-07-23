@@ -314,7 +314,7 @@
         </div>
 
         <!-- Icon category nav row -->
-        <div class="flex items-stretch gap-1 overflow-x-auto" v-else>
+        <div class="marketplace-category-scroll flex items-stretch gap-1 overflow-x-auto" v-else ref="scrollRow">
             <div
                 class="group relative flex shrink-0 flex-col items-center justify-center gap-1 border-b-2 border-transparent px-3 py-2 text-center hover:border-brandGreen hover:text-brandNavy"
                 v-for="category in categories.slice(0, 12)"
@@ -524,6 +524,7 @@
                         if (stored) {
                             this.categories = JSON.parse(stored);
                             this.isLoading = false;
+                            this.$nextTick(() => window.marketplacePeekScroll?.(this.$refs.scrollRow));
 
                             return;
                         }
@@ -539,6 +540,7 @@
                             this.isLoading = false;
                             this.categories = response.data.data;
                             localStorage.setItem('categories', JSON.stringify(this.categories));
+                            this.$nextTick(() => window.marketplacePeekScroll?.(this.$refs.scrollRow));
                         })
                         .catch(error => {
                             console.log(error);

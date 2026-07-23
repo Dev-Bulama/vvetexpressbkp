@@ -233,6 +233,100 @@
     {!! view_render_event('bagisto.shop.components.layouts.header.mobile.search.after') !!}
 </div>
 
+<div class="w-full border-b border-slate-100 bg-white px-4 lg:hidden">
+    <v-mobile-category-icons>
+        <div class="flex items-center gap-4 py-2.5">
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+        </div>
+    </v-mobile-category-icons>
+</div>
+
+@pushOnce('scripts')
+    <script type="text/x-template" id="v-mobile-category-icons-template">
+        <div class="marketplace-category-scroll flex items-stretch gap-1 overflow-x-auto py-1" v-if="! isLoading" ref="scrollRow">
+            <a
+                v-for="category in categories.slice(0, 14)"
+                :key="category.id"
+                :href="category.url"
+                class="flex shrink-0 flex-col items-center justify-center gap-1 px-3 py-2 text-center text-slate-600"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path :d="iconPath(category.name)" />
+                </svg>
+
+                <span class="whitespace-nowrap text-[11px] font-medium">@{{ category.name }}</span>
+            </a>
+        </div>
+
+        <div class="flex items-center gap-4 py-2.5" v-else>
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+            <span class="h-9 w-14 shrink-0 rounded shimmer" role="presentation"></span>
+        </div>
+    </script>
+
+    <script type="module">
+        const mobileCategoryIconKeywords = @json(\Webkul\Marketplace\Helpers\CategoryIcon::$keywords);
+        const mobileCategoryIconPaths = @json(\Webkul\Marketplace\Helpers\CategoryIcon::$paths);
+
+        app.component('v-mobile-category-icons', {
+            template: '#v-mobile-category-icons-template',
+
+            data() {
+                return {
+                    isLoading: true,
+                    categories: [],
+                };
+            },
+
+            mounted() {
+                this.initCategories();
+            },
+
+            methods: {
+                initCategories() {
+                    try {
+                        const stored = localStorage.getItem('categories');
+
+                        if (stored) {
+                            this.categories = JSON.parse(stored);
+                            this.isLoading = false;
+                            this.$nextTick(() => window.marketplacePeekScroll?.(this.$refs.scrollRow));
+
+                            return;
+                        }
+                    } catch (e) {}
+
+                    this.$axios.get("{{ route('shop.api.categories.tree') }}")
+                        .then(response => {
+                            this.isLoading = false;
+                            this.categories = response.data.data;
+                            localStorage.setItem('categories', JSON.stringify(this.categories));
+                            this.$nextTick(() => window.marketplacePeekScroll?.(this.$refs.scrollRow));
+                        })
+                        .catch(() => {});
+                },
+
+                iconPath(name) {
+                    const lower = (name || '').toLowerCase();
+
+                    for (const keyword in mobileCategoryIconKeywords) {
+                        if (lower.includes(keyword)) {
+                            return mobileCategoryIconPaths[mobileCategoryIconKeywords[keyword]] || mobileCategoryIconPaths['box'];
+                        }
+                    }
+
+                    return mobileCategoryIconPaths['box'];
+                },
+            },
+        });
+    </script>
+@endPushOnce
+
 @pushOnce('scripts')
     <script type="text/x-template" id="v-mobile-drawer-template">
             <x-shop::drawer

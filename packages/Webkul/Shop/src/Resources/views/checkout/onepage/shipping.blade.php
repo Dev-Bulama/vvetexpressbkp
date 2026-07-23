@@ -17,7 +17,7 @@
         id="v-shipping-methods-template"
     >
         <div class="mb-7 max-md:mb-0">
-            <template v-if="! methods">
+            <template v-if="! methods || autoSelecting">
                 <!-- Shipping Method Shimmer Effect -->
                 <x-shop::shimmer.checkout.onepage.shipping-method />
             </template>
@@ -100,11 +100,42 @@
 
             emits: ['processing', 'processed'],
 
+            data() {
+                return {
+                    // True while a single available shipping method is being
+                    // auto-confirmed, so the manual selection UI never flashes
+                    // for customers who already chose their delivery service
+                    // in the marketplace's own "Choose a Delivery Service"
+                    // step - re-asking them to pick from one option is a
+                    // redundant, confusing extra click, not a real choice.
+                    autoSelecting: false,
+                };
+            },
+
+            watch: {
+                methods: {
+                    immediate: true,
+                    handler(methods) {
+                        if (! methods || this.autoSelecting) {
+                            return;
+                        }
+
+                        const rates = Object.values(methods).flatMap(method => method.rates || []);
+
+                        if (rates.length === 1) {
+                            this.autoSelecting = true;
+
+                            this.store(rates[0].method);
+                        }
+                    },
+                },
+            },
+
             methods: {
                 store(selectedMethod) {
                     this.$emit('processing', 'payment');
 
-                    this.$axios.post("{{ route('shop.checkout.onepage.shipping_methods.store') }}", {    
+                    this.$axios.post("{{ route('shop.checkout.onepage.shipping_methods.store') }}", {
                             shipping_method: selectedMethod,
                         })
                         .then(response => {
@@ -115,6 +146,8 @@
                             }
                         })
                         .catch(error => {
+                            this.autoSelecting = false;
+
                             this.$emit('processing', 'shipping');
 
                             if (error.response.data.redirect_url) {

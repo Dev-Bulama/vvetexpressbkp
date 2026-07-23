@@ -317,17 +317,37 @@
     </div>
 
     <script>
-        document.getElementById('use-my-location')?.addEventListener('click', function () {
+        // Delegated on document, not attached directly to the button: this
+        // page's Vue-driven vendor list re-renders shortly after mount
+        // (live recalculation, availability updates), which replaces the
+        // button's DOM node and silently drops a directly-attached
+        // listener. A delegated listener on a stable ancestor survives that.
+        document.addEventListener('click', function (event) {
+            if (! event.target.closest('#use-my-location')) {
+                return;
+            }
+
             if (! navigator.geolocation) {
                 return;
             }
 
-            navigator.geolocation.getCurrentPosition(function (position) {
-                const url = new URL(window.location.href);
-                url.searchParams.set('lat', position.coords.latitude);
-                url.searchParams.set('lng', position.coords.longitude);
-                window.location.href = url.toString();
-            });
+            const button = event.target.closest('#use-my-location');
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Detecting your location...';
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('lat', position.coords.latitude);
+                    url.searchParams.set('lng', position.coords.longitude);
+                    window.location.href = url.toString();
+                },
+                function () {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            );
         });
 
         // Live-recalculate the order summary as the customer picks vendors.

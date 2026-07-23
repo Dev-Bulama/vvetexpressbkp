@@ -18,6 +18,7 @@ use Webkul\Marketplace\Models\Seller;
 use Webkul\Marketplace\Models\SellerProduct;
 use Webkul\Product\Helpers\Indexers\Flat as FlatIndexer;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Theme\Models\ThemeCustomization;
 
 class VetMarketplaceDemoSeeder extends Seeder
 {
@@ -131,7 +132,37 @@ class VetMarketplaceDemoSeeder extends Seeder
 
         $this->seedCarrierConfig($channel);
 
+        $this->seedHeroCarousel($channel);
+
         $this->command?->info('Vet marketplace demo data seeded: '.count($categoryIds).' categories, '.count($productIds).' products, '.count($sellerIds).' vendors.');
+    }
+
+    /**
+     * The homepage hero always renders one fixed, code-defined branded slide
+     * (packages/../resources/views/vendor/shop/home/index.blade.php) so the
+     * page never looks empty. This record is what lets an admin add real
+     * *additional* slides of their own through Bagisto's existing Theme
+     * Customization screen (Admin > Content > Themes) - it starts with zero
+     * images on purpose; we don't have real marketing creative to seed, and
+     * a placeholder/stock image would be exactly the kind of fake content
+     * this project avoids. The homepage template degrades gracefully
+     * (single slide, no carousel controls) until an admin uploads one.
+     */
+    protected function seedHeroCarousel(Channel $channel): void
+    {
+        ThemeCustomization::firstOrCreate(
+            [
+                'theme_code' => 'default',
+                'channel_id' => $channel->id,
+                'name' => 'VetExpress Hero Carousel',
+            ],
+            [
+                'type' => ThemeCustomization::IMAGE_CAROUSEL,
+                'sort_order' => 0,
+                'status' => 1,
+                'options' => ['images' => []],
+            ]
+        );
     }
 
     /**
