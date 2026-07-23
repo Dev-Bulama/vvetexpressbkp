@@ -67,6 +67,21 @@ return [
         'redirect' => env('GOOGLE_CALLBACK_URL'),
     ],
 
+    /**
+     * Powers customer address autocomplete/reverse-geocoding and the live
+     * delivery-tracking map. `api_key` is a browser-exposed, HTTP-referrer
+     * restricted key (Maps JavaScript API + Geocoding API only) - never a
+     * server-side/unrestricted key. Every consumer of this config must
+     * treat a blank api_key as "maps disabled" and degrade gracefully
+     * (manual address entry, status-timeline-only tracking), never error.
+     */
+    'google_maps' => [
+        'api_key' => env('GOOGLE_MAPS_API_KEY'),
+        'map_id' => env('GOOGLE_MAPS_MAP_ID'),
+        'region' => env('GOOGLE_MAPS_REGION', 'NG'),
+        'language' => env('GOOGLE_MAPS_LANGUAGE', 'en'),
+    ],
+
     'linkedin-openid' => [
         'client_id' => env('LINKEDIN_CLIENT_ID'),
         'client_secret' => env('LINKEDIN_CLIENT_SECRET'),

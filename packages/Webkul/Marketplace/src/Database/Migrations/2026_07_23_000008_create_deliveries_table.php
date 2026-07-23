@@ -61,7 +61,7 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            $table->unique('order_id');
+            $table->unique(['order_id', 'seller_id']);
             $table->index(['delivery_agent_id', 'status']);
             $table->index(['seller_id', 'status']);
             $table->index('customer_id');

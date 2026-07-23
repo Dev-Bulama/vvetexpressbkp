@@ -32,12 +32,18 @@ class MarketplaceServiceProvider extends ServiceProvider
 
         Route::middleware(['web', 'shop'])->group(__DIR__.'/../Routes/location-routes.php');
 
+        Route::middleware(['web', 'shop'])->group(__DIR__.'/../Routes/tracking-routes.php');
+
         Route::middleware('web')->group(__DIR__.'/../Routes/admin-routes.php');
 
         Route::middleware('web')->group(__DIR__.'/../Routes/agent-routes.php');
 
         Event::listen('bagisto.shop.products.price.after', function (ViewRenderEventManager $manager) {
             $manager->addTemplate('marketplace::shop.product-availability');
+        });
+
+        Event::listen('bagisto.shop.customers.account.orders.view.before', function (ViewRenderEventManager $manager) {
+            $manager->addTemplate('marketplace::shop.order-delivery-tracking');
         });
 
         Event::listen('checkout.order.save.after', CreateDeliveryOnOrderPlaced::class);
