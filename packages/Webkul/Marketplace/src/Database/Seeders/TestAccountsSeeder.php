@@ -3,6 +3,7 @@
 namespace Webkul\Marketplace\Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Webkul\Core\Models\Channel;
 use Webkul\Customer\Models\Customer;
 use Webkul\Customer\Repositories\CustomerRepository;
@@ -51,9 +52,21 @@ class TestAccountsSeeder extends Seeder
             return;
         }
 
-        $this->seedAdmin();
+        // Each step is independent - a failure in one (e.g. a schema
+        // difference on this particular database) shouldn't hide whether
+        // the others succeeded, and reportCredentials() always runs so the
+        // final output reflects what's actually true in the database.
+        try {
+            $this->seedAdmin();
+        } catch (\Throwable $e) {
+            $this->command?->error('Admin step failed: '.$e->getMessage());
+        }
 
-        $this->seedCustomer($channel);
+        try {
+            $this->seedCustomer($channel);
+        } catch (\Throwable $e) {
+            $this->command?->error('Customer step failed: '.$e->getMessage());
+        }
 
         $this->reportCredentials();
     }
@@ -94,12 +107,15 @@ class TestAccountsSeeder extends Seeder
             return;
         }
 
+        // 'password_confirmation' is a form-validation-only field, never a
+        // real column - it doesn't belong in a direct create() call like
+        // this one (only in a request going through a FormRequest's
+        // 'confirmed' rule).
         $repository->create([
             'first_name' => 'Demo',
             'last_name' => 'Customer',
             'email' => static::CUSTOMER_EMAIL,
             'password' => bcrypt(static::CUSTOMER_PASSWORD),
-            'password_confirmation' => static::CUSTOMER_PASSWORD,
             'customer_group_id' => 2,
             'channel_id' => $channel->id,
             'is_verified' => 1,
@@ -109,13 +125,19 @@ class TestAccountsSeeder extends Seeder
 
     protected function reportCredentials(): void
     {
-        $sellerExists = Seller::where('email', static::SELLER_EMAIL)->exists();
-        $agentExists = DeliveryAgent::where('email', static::AGENT_EMAIL)->exists();
+        $admin = Admin::where('email', static::ADMIN_EMAIL)->first();
+        $customer = Customer::where('email', static::CUSTOMER_EMAIL)->first();
+        $seller = Seller::where('email', static::SELLER_EMAIL)->first();
+        $agent = DeliveryAgent::where('email', static::AGENT_EMAIL)->first();
+
+        $status = fn ($model, string $password) => $model && Hash::check($password, $model->password)
+            ? 'READY'
+            : ($model ? 'EXISTS but password check failed' : 'NOT SET UP');
 
         $this->command?->warn('These are DEV/DEMO credentials only - never use them in production.');
-        $this->command?->info('Admin:    '.static::ADMIN_EMAIL.' / '.static::ADMIN_PASSWORD.' - /admin/login');
-        $this->command?->info('Customer: '.static::CUSTOMER_EMAIL.' / '.static::CUSTOMER_PASSWORD.' - /customer/login');
-        $this->command?->info('Seller:   '.static::SELLER_EMAIL.' / '.static::SELLER_PASSWORD.' - /seller/login'.($sellerExists ? '' : ' (run VetMarketplaceDemoSeeder first)'));
-        $this->command?->info('Agent:    '.static::AGENT_EMAIL.' / '.static::AGENT_PASSWORD.' - /delivery-agent/login'.($agentExists ? '' : ' (run VetMarketplaceDemoSeeder first)'));
+        $this->command?->info('['.$status($admin, static::ADMIN_PASSWORD).'] Admin:    '.static::ADMIN_EMAIL.' / '.static::ADMIN_PASSWORD.' - /admin/login');
+        $this->command?->info('['.$status($customer, static::CUSTOMER_PASSWORD).'] Customer: '.static::CUSTOMER_EMAIL.' / '.static::CUSTOMER_PASSWORD.' - /customer/login');
+        $this->command?->info('['.$status($seller, static::SELLER_PASSWORD).'] Seller:   '.static::SELLER_EMAIL.' / '.static::SELLER_PASSWORD.' - /seller/login'.($seller ? '' : ' (run VetMarketplaceDemoSeeder first)'));
+        $this->command?->info('['.$status($agent, static::AGENT_PASSWORD).'] Agent:    '.static::AGENT_EMAIL.' / '.static::AGENT_PASSWORD.' - /delivery-agent/login'.($agent ? '' : ' (run VetMarketplaceDemoSeeder first)'));
     }
 }
