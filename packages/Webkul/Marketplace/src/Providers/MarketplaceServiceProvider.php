@@ -6,9 +6,14 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Spatie\ResponseCache\ResponseCache;
+use Webkul\CMS\Models\Page as CmsPage;
+use Webkul\Core\Models\Channel;
+use Webkul\Core\Models\CoreConfig;
 use Webkul\Marketplace\Http\Middleware\DeliveryAgentGuard;
 use Webkul\Marketplace\Http\Middleware\SellerGuard;
 use Webkul\Marketplace\Listeners\CreateDeliveryOnOrderPlaced;
+use Webkul\Theme\Models\ThemeCustomization;
 use Webkul\Theme\ViewRenderEventManager;
 
 class MarketplaceServiceProvider extends ServiceProvider
@@ -47,5 +52,33 @@ class MarketplaceServiceProvider extends ServiceProvider
         });
 
         Event::listen('checkout.order.save.after', CreateDeliveryOnOrderPlaced::class);
+
+        $this->clearResponseCacheOnStorefrontChanges();
+    }
+
+    /**
+     * Bagisto's full-page cache (spatie/laravel-responsecache) is keyed by
+     * URL/channel/locale/currency only, with no invalidation wired up for
+     * admin changes - saving a new channel logo, a config value, a homepage
+     * theme slide, or a CMS page would otherwise stay invisible on the
+     * storefront until the cache's own lifetime expires (a week by
+     * default). Clearing the whole cache on these saves is coarse, but
+     * these are infrequent admin actions and a cache miss just costs one
+     * normal page render.
+     */
+    private function clearResponseCacheOnStorefrontChanges(): void
+    {
+        if (! config('responsecache.enabled')) {
+            return;
+        }
+
+        $clear = function (): void {
+            app(ResponseCache::class)->clear();
+        };
+
+        foreach ([Channel::class, CoreConfig::class, ThemeCustomization::class, CmsPage::class] as $model) {
+            $model::saved($clear);
+            $model::deleted($clear);
+        }
     }
 }
