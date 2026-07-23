@@ -126,8 +126,15 @@
                     <div class="meta-row"><span>Estimated time</span><span>~{{ $delivery->duration_minutes_estimate }} min</span></div>
                 @endif
 
+                {{--
+                    A placed order's delivery fee is historical - shown in
+                    the currency the order was actually charged in, not
+                    re-converted to whatever currency the viewer is
+                    currently browsing in (the same principle order/invoice
+                    emails already follow elsewhere in the app).
+                --}}
                 @if ($delivery->fee_minor !== null)
-                    <div class="meta-row"><span>Delivery fee</span><span>{{ core()->formatPrice($delivery->fee_minor / 100) }}</span></div>
+                    <div class="meta-row"><span>Delivery fee</span><span>{{ core()->formatPrice($delivery->fee_minor / 100, $delivery->order?->order_currency_code) }}</span></div>
                 @endif
             </div>
 

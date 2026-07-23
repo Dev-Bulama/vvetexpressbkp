@@ -41,7 +41,7 @@
                     Available from {{ $offers->count() }} nearby {{ Str::plural('vendor', $offers->count()) }}
                 </span>
                 <span class="block text-xs text-brandGreen">
-                    From {{ core()->formatPrice($offers->min('price')) }} &middot; best offer: {{ $vendorLabel($offers->first()) }}
+                    From {{ core()->currency($offers->min('price')) }} &middot; best offer: {{ $vendorLabel($offers->first()) }}
                 </span>
             </span>
 
@@ -71,7 +71,7 @@
                         </p>
                     </div>
 
-                    <p class="shrink-0 font-semibold text-brandGreen">{{ core()->formatPrice($offer->price) }}</p>
+                    <p class="shrink-0 font-semibold text-brandGreen">{{ core()->currency($offer->price) }}</p>
                 </div>
             @endforeach
 

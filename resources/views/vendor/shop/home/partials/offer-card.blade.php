@@ -50,10 +50,10 @@
     @endif
 
     <div class="mt-1 flex flex-wrap items-baseline gap-1.5">
-        <p class="text-sm font-semibold text-brandGreen">{{ core()->formatPrice($price) }}</p>
+        <p class="text-sm font-semibold text-brandGreen">{{ core()->currency($price) }}</p>
 
         @if ($hasDiscount)
-            <p class="text-xs text-slate-400 line-through">{{ core()->formatPrice($catalogPrice) }}</p>
+            <p class="text-xs text-slate-400 line-through">{{ core()->currency($catalogPrice) }}</p>
         @endif
     </div>
 

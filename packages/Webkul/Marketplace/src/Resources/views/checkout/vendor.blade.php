@@ -146,8 +146,8 @@
                                             name="seller_id"
                                             value="{{ $row->seller->id }}"
                                             class="mt-1 h-4 w-4 accent-brandGreen vendor-radio"
-                                            data-cart-total="{{ $row->cart_total }}"
-                                            data-delivery-fee="{{ $row->delivery_fee }}"
+                                            data-cart-total="{{ core()->convertPrice($row->cart_total) }}"
+                                            data-delivery-fee="{{ core()->convertPrice($row->delivery_fee) }}"
                                             data-shop-name="{{ $row->seller->shop_name }}"
                                             onchange="marketplaceRecalculate()"
                                             {{ (int) $selectedSellerId === $row->seller->id ? 'checked' : '' }}
@@ -183,13 +183,13 @@
                                                     <span class="text-slate-600">{{ number_format((float) $row->seller->rating, 1) }}</span>
                                                 </span>
 
-                                                <span>Delivery {{ core()->formatPrice($row->delivery_fee) }}</span>
+                                                <span>Delivery {{ core()->currency($row->delivery_fee) }}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="shrink-0 text-right sm:pl-3">
-                                        <p class="font-semibold text-slate-800">{{ core()->formatPrice($row->cart_total) }}</p>
+                                        <p class="font-semibold text-slate-800">{{ core()->currency($row->cart_total) }}</p>
                                         <p class="text-[11px] text-slate-400">Full cart total</p>
                                     </div>
                                 </label>
@@ -222,19 +222,19 @@
 
                         <div class="flex justify-between text-slate-600">
                             <span>Cart Subtotal</span>
-                            <span id="summary-subtotal">{{ core()->formatPrice($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->cart_total ?? 0) }}</span>
+                            <span id="summary-subtotal">{{ core()->currency($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->cart_total ?? 0) }}</span>
                         </div>
 
                         <div class="flex justify-between text-slate-600">
                             <span>Delivery Fee</span>
-                            <span id="summary-delivery-fee">{{ core()->formatPrice($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->delivery_fee ?? 0) }}</span>
+                            <span id="summary-delivery-fee">{{ core()->currency($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->delivery_fee ?? 0) }}</span>
                         </div>
                     </div>
 
                     <div class="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
                         <span class="font-semibold text-slate-800">Total</span>
                         <span class="text-lg font-bold text-brandGreen" id="summary-total">
-                            {{ core()->formatPrice(
+                            {{ core()->currency(
                                 ($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->cart_total ?? 0)
                                 + ($eligibleVendors->firstWhere('seller.id', (int) $selectedSellerId)?->delivery_fee ?? 0)
                             ) }}

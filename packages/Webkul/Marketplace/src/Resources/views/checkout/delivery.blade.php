@@ -48,7 +48,7 @@
                                                 name="quote_token"
                                                 value="{{ $entry['record']->quote_token }}"
                                                 class="delivery-radio h-4 w-4 accent-brandGreen"
-                                                data-fee-minor="{{ $entry['quote']->feeMinor }}"
+                                                data-fee="{{ core()->convertPrice($entry['quote']->feeMinor / 100) }}"
                                                 onchange="marketplaceRecalculateDelivery()"
                                                 {{ $index === 0 ? 'checked' : '' }}
                                             >
@@ -79,7 +79,7 @@
                                             </div>
                                         </div>
 
-                                        <span class="shrink-0 font-semibold text-slate-800">{{ core()->formatPrice($entry['quote']->feeMinor / 100) }}</span>
+                                        <span class="shrink-0 font-semibold text-slate-800">{{ core()->currency($entry['quote']->feeMinor / 100) }}</span>
                                     </label>
                                 @endforeach
                             </div>
@@ -94,7 +94,7 @@
                 <div class="flex items-center justify-between border-t border-slate-200 pt-3 text-sm">
                     <span class="font-semibold text-slate-800">Delivery fee</span>
                     <span class="text-lg font-bold text-brandGreen" id="delivery-total">
-                        {{ core()->formatPrice(($quotes->first()['quote']->feeMinor ?? 0) / 100) }}
+                        {{ core()->currency(($quotes->first()['quote']->feeMinor ?? 0) / 100) }}
                     </span>
                 </div>
 
@@ -125,7 +125,7 @@
 
                 if (! checked) return;
 
-                document.getElementById('delivery-total').textContent = formatPrice(parseFloat(checked.dataset.feeMinor) / 100);
+                document.getElementById('delivery-total').textContent = formatPrice(parseFloat(checked.dataset.fee));
 
                 document.querySelectorAll('.delivery-option-label').forEach(label => {
                     const radio = label.querySelector('.delivery-radio');
