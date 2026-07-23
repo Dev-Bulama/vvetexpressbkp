@@ -4,6 +4,7 @@ namespace Webkul\Marketplace\ERPNext;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Thin wrapper around ERPNext/Frappe's REST API (https://docs.erpnext.com).
@@ -96,8 +97,22 @@ class ERPNextClient
 
             $response = $this->client()->get($url);
 
-            return $response->successful() ? $response->body() : null;
-        } catch (\Throwable) {
+            if (! $response->successful()) {
+                Log::warning('ERPNext image download failed', [
+                    'url' => $url,
+                    'status' => $response->status(),
+                ]);
+
+                return null;
+            }
+
+            return $response->body();
+        } catch (\Throwable $e) {
+            Log::warning('ERPNext image download threw an exception', [
+                'path' => $path,
+                'message' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }

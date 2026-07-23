@@ -31,6 +31,13 @@ class SyncErpNextProductsCommand extends Command
 
     protected $description = 'Sync sellable products from the connected ERPNext instance into the catalog';
 
+    /**
+     * Items ERPNext returned with no `image` field at all - reported at the
+     * end so it's obvious whether missing storefront images are an ERPNext
+     * catalog data issue rather than a download/storage problem.
+     */
+    protected int $itemsWithoutImage = 0;
+
     public function handle(ERPNextClient $client, ProductRepository $productRepository): int
     {
         if (! $client->isConfigured()) {
@@ -84,6 +91,10 @@ class SyncErpNextProductsCommand extends Command
         } while (count($items) === $limitPageLength);
 
         $this->info("Synced {$synced} product(s) from ERPNext".($failed ? ", {$failed} failed" : '').'.');
+
+        if ($this->itemsWithoutImage > 0) {
+            $this->warn("{$this->itemsWithoutImage} synced item(s) had no image field in ERPNext at all - check the Item's Image field there, this isn't a download failure.");
+        }
 
         return self::SUCCESS;
     }
@@ -144,7 +155,9 @@ class SyncErpNextProductsCommand extends Command
             ]);
         }
 
-        if (! empty($item['image']) && ! $product->images()->exists()) {
+        if (empty($item['image'])) {
+            $this->itemsWithoutImage++;
+        } elseif (! $product->images()->exists()) {
             $this->attachImage($product, $item['image'], $client);
         }
 

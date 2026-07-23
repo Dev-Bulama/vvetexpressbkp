@@ -240,9 +240,7 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-brandNavy">Top Categories</h2>
 
-                @if ($rootCategory)
-                    <a href="{{ $rootCategory->url }}" class="text-sm font-semibold text-brandGreen">See All &rsaquo;</a>
-                @endif
+                <a href="{{ route('shop.search.index') }}" class="text-sm font-semibold text-brandGreen">See All &rsaquo;</a>
             </div>
 
             <div class="mt-4 flex gap-5 overflow-x-auto pb-2 sm:grid sm:grid-cols-6 sm:gap-4 md:grid-cols-11 sm:overflow-visible">
@@ -259,14 +257,12 @@
                     </a>
                 @endforeach
 
-                @if ($rootCategory)
-                    <a href="{{ $rootCategory->url }}" class="flex shrink-0 flex-col items-center gap-2 text-center">
-                        <span class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </span>
-                        <span class="text-xs text-slate-600">View All</span>
-                    </a>
-                @endif
+                <a href="{{ route('shop.search.index') }}" class="flex shrink-0 flex-col items-center gap-2 text-center">
+                    <span class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    </span>
+                    <span class="text-xs text-slate-600">View All</span>
+                </a>
             </div>
         </section>
 
@@ -281,9 +277,7 @@
                     </p>
                 </div>
 
-                @if ($rootCategory)
-                    <a href="{{ $rootCategory->url }}" class="text-sm font-semibold text-brandGreen">See All &rsaquo;</a>
-                @endif
+                <a href="{{ route('shop.search.index') }}" class="text-sm font-semibold text-brandGreen">See All &rsaquo;</a>
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -308,9 +302,7 @@
                         </div>
                     </div>
 
-                    @if ($rootCategory)
-                        <a href="{{ $rootCategory->url }}" class="text-sm font-semibold text-brandGreen">See All Deals &rsaquo;</a>
-                    @endif
+                    <a href="{{ route('shop.search.index') }}" class="text-sm font-semibold text-brandGreen">See All Deals &rsaquo;</a>
                 </div>
 
                 <div class="mt-4 flex gap-4 overflow-x-auto pb-2">
