@@ -14,7 +14,10 @@ class SellerRegistrationController extends Controller
 
     public function index(): View
     {
-        return view('marketplace::seller.sign-up');
+        return view('marketplace::seller.sign-up', [
+            'mapsApiKey' => config('services.google_maps.api_key'),
+            'mapId' => config('services.google_maps.map_id'),
+        ]);
     }
 
     public function store(SellerRegistrationRequest $request): RedirectResponse

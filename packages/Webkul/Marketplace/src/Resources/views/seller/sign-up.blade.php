@@ -31,6 +31,9 @@
         .hint.ok { color: #166534; }
         .hint.warn { color: #b45309; }
 
+        #loc-map-canvas { display: none; width: 100%; height: 220px; border-radius: 8px; margin-top: 10px; }
+        .map-hint { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
         #camera-box { display: none; margin-top: 10px; }
         #camera-preview, #camera-playback { width: 100%; border-radius: 8px; background: #000; display: none; max-height: 260px; }
         .rec-indicator { display: none; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #dc2626; margin-top: 6px; }
@@ -74,6 +77,11 @@
                 <input type="hidden" name="latitude" id="loc-latitude" value="{{ old('latitude') }}">
                 <input type="hidden" name="longitude" id="loc-longitude" value="{{ old('longitude') }}">
 
+                @if ($mapsApiKey)
+                    <div id="loc-map-canvas"></div>
+                    <div class="map-hint" id="loc-map-hint" style="display:none;">Drag the pin, or tap the map, to pinpoint the exact spot.</div>
+                @endif
+
                 <label>Address</label>
                 <input type="text" name="address" id="loc-address" value="{{ old('address') }}">
 
@@ -99,6 +107,7 @@
                     <div class="rec-indicator" id="rec-indicator"><span class="rec-dot"></span> Recording&hellip; <span id="rec-timer">0s</span> / 60s</div>
 
                     <div class="btn-row">
+                        <button type="button" class="btn-outline" id="camera-switch-btn" style="display:none;">Switch Camera</button>
                         <button type="button" class="btn-secondary" id="camera-record-btn" style="display:none;">Start Recording</button>
                         <button type="button" class="btn-danger" id="camera-stop-btn" style="display:none;">Stop Recording</button>
                         <button type="button" class="btn-outline" id="camera-retake-btn" style="display:none;">Re-record</button>
@@ -121,16 +130,32 @@
         <p style="margin-top:16px;font-size:13px;">Already have an account? <a href="{{ route('marketplace.seller.session.index') }}">Log in</a></p>
     </div>
 
+    @if ($mapsApiKey)
+        <script>
+            window.__sellerSignupMapsReady = function () {
+                window.dispatchEvent(new Event('marketplace:signup-maps-ready'));
+            };
+        </script>
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ $mapsApiKey }}&callback=__sellerSignupMapsReady&region={{ config('services.google_maps.region') }}&language={{ config('services.google_maps.language') }}"></script>
+    @endif
+
     <script>
         (function () {
+            const hasMapsKey = {!! $mapsApiKey ? 'true' : 'false' !!};
+            const mapId = {!! $mapId ? json_encode($mapId) : 'null' !!};
+
+            let map = null;
+            let marker = null;
+
             /**
-             * Shop location auto-detect - same getCurrentPosition ->
-             * Nominatim reverse-geocode -> fill-fields pattern already used
-             * for customer delivery location (see
-             * shop/components/layouts/header/location-modal.blade.php).
-             * Nominatim is free/keyless, so this needs no Google Maps API
-             * key. Never fakes an address: on any failure the seller just
-             * fills the fields in manually.
+             * Shop location auto-detect + pin placement. Reverse-geocoding
+             * (turning coordinates into an address) uses OpenStreetMap's
+             * free, keyless Nominatim service - same as the customer
+             * delivery-location modal. The Google Map here (only rendered
+             * when GOOGLE_MAPS_API_KEY is configured) is purely a visual
+             * "confirm/adjust the exact pin" aid, since raw GPS alone can
+             * be tens of meters off, especially indoors - dragging the pin
+             * or tapping the map re-runs the same reverse-geocode.
              */
             function reverseGeocode(lat, lng) {
                 const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='
@@ -158,8 +183,145 @@
                     });
             }
 
+            function setCoords(lat, lng, updateFields) {
+                document.getElementById('loc-latitude').value = lat;
+                document.getElementById('loc-longitude').value = lng;
+
+                if (map && marker) {
+                    const position = { lat: lat, lng: lng };
+                    marker.setPosition(position);
+                    map.panTo(position);
+                }
+
+                if (updateFields === false) {
+                    return Promise.resolve();
+                }
+
+                return reverseGeocode(lat, lng).then(function (resolved) {
+                    if (resolved.address) {
+                        document.getElementById('loc-address').value = resolved.address;
+                    }
+
+                    if (resolved.city) {
+                        document.getElementById('loc-city').value = resolved.city;
+                    }
+                });
+            }
+
+            function initMapIfReady() {
+                if (! hasMapsKey || ! window.google || map) {
+                    return;
+                }
+
+                const canvas = document.getElementById('loc-map-canvas');
+
+                if (! canvas) {
+                    return;
+                }
+
+                const lat = parseFloat(document.getElementById('loc-latitude').value) || 6.5244;
+                const lng = parseFloat(document.getElementById('loc-longitude').value) || 3.3792;
+
+                canvas.style.display = 'block';
+                document.getElementById('loc-map-hint').style.display = 'block';
+
+                map = new google.maps.Map(canvas, {
+                    center: { lat: lat, lng: lng },
+                    zoom: 15,
+                    mapId: mapId || undefined,
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                });
+
+                marker = new google.maps.Marker({
+                    position: { lat: lat, lng: lng },
+                    map: map,
+                    draggable: true,
+                });
+
+                marker.addListener('dragend', function () {
+                    const position = marker.getPosition();
+                    document.getElementById('loc-latitude').value = position.lat();
+                    document.getElementById('loc-longitude').value = position.lng();
+
+                    reverseGeocode(position.lat(), position.lng()).then(function (resolved) {
+                        if (resolved.address) document.getElementById('loc-address').value = resolved.address;
+                        if (resolved.city) document.getElementById('loc-city').value = resolved.city;
+                    });
+                });
+
+                map.addListener('click', function (event) {
+                    marker.setPosition(event.latLng);
+                    document.getElementById('loc-latitude').value = event.latLng.lat();
+                    document.getElementById('loc-longitude').value = event.latLng.lng();
+
+                    reverseGeocode(event.latLng.lat(), event.latLng.lng()).then(function (resolved) {
+                        if (resolved.address) document.getElementById('loc-address').value = resolved.address;
+                        if (resolved.city) document.getElementById('loc-city').value = resolved.city;
+                    });
+                });
+            }
+
+            window.addEventListener('marketplace:signup-maps-ready', initMapIfReady);
+
             const detectBtn = document.getElementById('detect-location-btn');
             const detectStatus = document.getElementById('detect-location-status');
+
+            /**
+             * Browser geolocation with a high-accuracy attempt first, and
+             * a fallback to a much cheaper (network/WiFi-based) lookup if
+             * that one times out or is unavailable. A device without a
+             * real GPS chip (most laptops) can take a long time - or
+             * never resolve - a high-accuracy request, but responds fast
+             * to the low-accuracy one, so this fallback is what actually
+             * fixes "always times out" for that class of hardware rather
+             * than just raising a timeout number.
+             */
+            function detectLocation(options, isFallback) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        detectBtn.textContent = 'Location detected - looking up your address...';
+
+                        setCoords(lat, lng)
+                            .then(function () {
+                                detectStatus.className = 'hint ok';
+                                detectStatus.textContent = 'Location detected. Drag the pin below if it is not exact, and confirm the address.';
+                            })
+                            .finally(function () {
+                                detectBtn.disabled = false;
+                                detectBtn.textContent = 'Detect My Shop Location';
+                            });
+                    },
+                    function (error) {
+                        // First attempt (high accuracy) timed out or the
+                        // position is temporarily unavailable - retry once
+                        // with a much cheaper, faster lookup before giving
+                        // up and asking for manual entry.
+                        if (! isFallback && (error.code === 2 || error.code === 3)) {
+                            detectBtn.textContent = 'Still detecting (trying a faster method)...';
+
+                            detectLocation({ enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 }, true);
+                            return;
+                        }
+
+                        detectBtn.disabled = false;
+                        detectBtn.textContent = 'Detect My Shop Location';
+
+                        const messages = {
+                            1: 'Location permission denied. Please enter your address manually, or use the map below.',
+                            2: 'Your location is currently unavailable. Please enter your address manually, or use the map below.',
+                            3: 'Location request timed out. Please enter your address manually, or use the map below.',
+                        };
+
+                        detectStatus.className = 'hint warn';
+                        detectStatus.textContent = messages[error.code] || 'Could not detect your location. Please enter your address manually.';
+                    },
+                    options
+                );
+            }
 
             detectBtn.addEventListener('click', function () {
                 detectStatus.className = 'hint';
@@ -174,49 +336,7 @@
                 detectBtn.disabled = true;
                 detectBtn.textContent = 'Detecting your location...';
 
-                navigator.geolocation.getCurrentPosition(
-                    function (position) {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-
-                        document.getElementById('loc-latitude').value = lat;
-                        document.getElementById('loc-longitude').value = lng;
-
-                        detectBtn.textContent = 'Location detected - looking up your address...';
-
-                        reverseGeocode(lat, lng)
-                            .then(function (resolved) {
-                                if (resolved.address) {
-                                    document.getElementById('loc-address').value = resolved.address;
-                                }
-
-                                if (resolved.city) {
-                                    document.getElementById('loc-city').value = resolved.city;
-                                }
-
-                                detectStatus.className = 'hint ok';
-                                detectStatus.textContent = 'Location detected. Please confirm the address below.';
-                            })
-                            .finally(function () {
-                                detectBtn.disabled = false;
-                                detectBtn.textContent = 'Detect My Shop Location';
-                            });
-                    },
-                    function (error) {
-                        detectBtn.disabled = false;
-                        detectBtn.textContent = 'Detect My Shop Location';
-
-                        const messages = {
-                            1: 'Location permission denied. Please enter your address manually.',
-                            2: 'Your location is currently unavailable. Please enter your address manually.',
-                            3: 'Location request timed out. Please enter your address manually.',
-                        };
-
-                        detectStatus.className = 'hint warn';
-                        detectStatus.textContent = messages[error.code] || 'Could not detect your location. Please enter your address manually.';
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-                );
+                detectLocation({ enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }, false);
             });
         })();
 
@@ -239,6 +359,7 @@
             const MAX_SECONDS = 60;
 
             const startBtn = document.getElementById('camera-start-btn');
+            const switchBtn = document.getElementById('camera-switch-btn');
             const recordBtn = document.getElementById('camera-record-btn');
             const stopBtn = document.getElementById('camera-stop-btn');
             const retakeBtn = document.getElementById('camera-retake-btn');
@@ -267,6 +388,12 @@
             let timerHandle = null;
             let elapsed = 0;
             let hiddenInput = null;
+
+            // Shop verification should show the shop, not the seller's
+            // face - default to the rear/environment camera on devices
+            // that have one. Toggled by the "Switch Camera" button below,
+            // which just flips this and re-opens the stream.
+            let facingMode = 'environment';
 
             function stopStream() {
                 if (stream) {
@@ -304,22 +431,29 @@
                 hiddenInput.files = dataTransfer.files;
             }
 
+            function openCamera() {
+                return navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: true,
+                }).then(function (mediaStream) {
+                    stopStream();
+                    stream = mediaStream;
+                    preview.srcObject = stream;
+                });
+            }
+
             startBtn.addEventListener('click', function () {
                 statusEl.className = 'hint';
                 statusEl.textContent = 'Requesting camera access...';
                 startBtn.disabled = true;
 
-                navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 640 }, height: { ideal: 480 } },
-                    audio: true,
-                }).then(function (mediaStream) {
-                    stream = mediaStream;
+                openCamera().then(function () {
                     box.style.display = 'block';
                     preview.style.display = 'block';
-                    preview.srcObject = stream;
                     playback.style.display = 'none';
 
                     startBtn.style.display = 'none';
+                    switchBtn.style.display = 'block';
                     recordBtn.style.display = 'block';
                     statusEl.className = 'hint ok';
                     statusEl.textContent = 'Camera ready. Walk around and show your shop, then record.';
@@ -327,6 +461,28 @@
                     startBtn.disabled = false;
                     statusEl.className = 'hint warn';
                     statusEl.textContent = 'Could not access your camera. Check permissions and try again.';
+                });
+            });
+
+            switchBtn.addEventListener('click', function () {
+                const previousFacingMode = facingMode;
+                facingMode = facingMode === 'environment' ? 'user' : 'environment';
+
+                switchBtn.disabled = true;
+                statusEl.className = 'hint';
+                statusEl.textContent = 'Switching camera...';
+
+                openCamera().then(function () {
+                    switchBtn.disabled = false;
+                    statusEl.className = 'hint ok';
+                    statusEl.textContent = 'Camera switched.';
+                }).catch(function () {
+                    // Likely only one camera is available on this device -
+                    // revert to whichever facing mode was already working.
+                    facingMode = previousFacingMode;
+                    switchBtn.disabled = false;
+                    statusEl.className = 'hint warn';
+                    statusEl.textContent = 'Could not switch camera - this device may only have one.';
                 });
             });
 
@@ -361,6 +517,7 @@
 
                     stopStream();
 
+                    switchBtn.style.display = 'none';
                     recordBtn.style.display = 'none';
                     stopBtn.style.display = 'none';
                     retakeBtn.style.display = 'block';
@@ -372,6 +529,11 @@
 
                 recorder.start();
 
+                // Camera can't be swapped mid-recording without rebuilding
+                // the MediaRecorder against a new stream, so hide it for
+                // the duration of the recording rather than let it silently
+                // do nothing (or worse, drop frames) if tapped.
+                switchBtn.style.display = 'none';
                 recordBtn.style.display = 'none';
                 stopBtn.style.display = 'block';
                 recIndicator.style.display = 'flex';
