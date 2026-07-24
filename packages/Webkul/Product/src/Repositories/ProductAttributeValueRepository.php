@@ -43,7 +43,10 @@ class ProductAttributeValueRepository extends Repository
 
             if (
                 $attribute->type === 'price'
-                && empty($data[$attribute->code])
+                && (
+                    $data[$attribute->code] === null
+                    || $data[$attribute->code] === ''
+                )
             ) {
                 $data[$attribute->code] = null;
             }
