@@ -23,6 +23,15 @@ class SellerRegistrationRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+
+            /**
+             * Optional live-recorded shop walkthrough (see sign-up.blade.php
+             * - captured with getUserMedia/MediaRecorder, never a file
+             * picker). Restricted to the mime types browsers actually
+             * produce from MediaRecorder so this can't be used as a
+             * general-purpose file upload endpoint.
+             */
+            'verification_video' => ['nullable', 'file', 'mimetypes:video/webm,video/mp4,video/quicktime', 'max:25000'],
         ];
     }
 }

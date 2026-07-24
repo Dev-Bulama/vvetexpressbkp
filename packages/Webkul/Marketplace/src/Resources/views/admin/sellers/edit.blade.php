@@ -61,6 +61,19 @@
             </div>
         </dl>
 
+        @if ($seller->verification_video_path)
+            <div class="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
+                <p class="mb-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                    Shop Verification Video
+                    <span class="ml-1 font-normal text-gray-400">
+                        recorded live at registration, {{ $seller->verification_video_recorded_at?->format('d M Y, H:i') }}
+                    </span>
+                </p>
+
+                <video src="{{ $seller->verificationVideoUrl() }}" controls class="max-h-80 w-full rounded-lg bg-black"></video>
+            </div>
+        @endif
+
         <div class="mt-6 flex gap-2.5">
             @if ($seller->status !== 'approved')
                 <form method="POST" action="{{ route('marketplace.admin.sellers.update-status', $seller->id) }}">
