@@ -5313,6 +5313,7 @@ return [
                 'locales' => 'Locales',
                 'marketing' => 'Marketing',
                 'marketplace' => 'Marketplace',
+                'metrics' => 'Metrics',
                 'mode' => 'Dark Mode',
                 'newsletter-subscriptions' => 'Newsletter Subscriptions',
                 'orders' => 'Orders',

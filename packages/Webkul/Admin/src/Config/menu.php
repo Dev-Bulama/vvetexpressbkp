@@ -431,4 +431,15 @@ return [
         'sort' => 3,
         'icon' => '',
     ],
+
+    /**
+     * Metrics.
+     */
+    [
+        'key' => 'metrics',
+        'name' => 'admin::app.components.layouts.sidebar.metrics',
+        'route' => 'marketplace.admin.metrics.index',
+        'sort' => 11,
+        'icon' => 'icon-report',
+    ],
 ];
