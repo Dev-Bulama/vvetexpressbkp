@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Webkul\Category\Models\Category;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Models\Channel;
+use Webkul\Marketplace\Concerns\ClearsResponseCache;
 use Webkul\Marketplace\ERPNext\ERPNextClient;
 use Webkul\Marketplace\Models\ErpNextCategory;
 
@@ -21,6 +22,8 @@ use Webkul\Marketplace\Models\ErpNextCategory;
  */
 class SyncErpNextCategoriesCommand extends Command
 {
+    use ClearsResponseCache;
+
     protected $signature = 'erpnext:sync-categories';
 
     protected $description = 'Sync the category tree from the connected ERPNext instance (Item Groups) into the catalog';
@@ -156,6 +159,15 @@ class SyncErpNextCategoriesCommand extends Command
             ->update(['sync_status' => ErpNextCategory::STATUS_MISSING]);
 
         $this->info("Synced {$synced} categor".($synced === 1 ? 'y' : 'ies').' from ERPNext'.($failed ? ", {$failed} failed" : '').'.');
+
+        // The homepage and category listing routes are behind
+        // spatie/laravel-responsecache with no built-in invalidation for
+        // catalog changes - without this, a new or renamed category stays
+        // invisible on the live storefront until the cache's own (long)
+        // lifetime expires.
+        if ($synced > 0) {
+            $this->clearResponseCache();
+        }
 
         return self::SUCCESS;
     }

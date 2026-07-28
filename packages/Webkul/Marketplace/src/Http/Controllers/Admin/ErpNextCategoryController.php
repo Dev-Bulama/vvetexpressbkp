@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 use Webkul\Category\Models\Category;
 use Webkul\Core\Models\Channel;
+use Webkul\Marketplace\Concerns\ClearsResponseCache;
 use Webkul\Marketplace\Http\Controllers\Controller;
 use Webkul\Marketplace\Models\ErpNextCategory;
 
@@ -18,6 +19,8 @@ use Webkul\Marketplace\Models\ErpNextCategory;
  */
 class ErpNextCategoryController extends Controller
 {
+    use ClearsResponseCache;
+
     public function index(): View
     {
         $mappings = ErpNextCategory::with('category')
@@ -61,6 +64,10 @@ class ErpNextCategoryController extends Controller
             ->whereNotIn('id', $rootCategoryIds)
             ->update(['status' => 0]);
 
+        if ($disabledCount > 0) {
+            $this->clearResponseCache();
+        }
+
         session()->flash('success', $disabledCount
             ? "Disabled {$disabledCount} non-ERPNext categor".($disabledCount === 1 ? 'y' : 'ies').' - only categories synced from ERPNext are visible on the storefront now.'
             : 'No non-ERPNext categories were enabled - nothing to disable.');
@@ -85,6 +92,8 @@ class ErpNextCategoryController extends Controller
         // that repository method assumes a full locale-keyed admin-form
         // payload and errors on a partial, non-translated-only update.
         Category::where('id', $mapping->category_id)->update(['status' => $disable ? 0 : 1]);
+
+        $this->clearResponseCache();
 
         $mapping->update(['is_disabled_locally' => $disable]);
 

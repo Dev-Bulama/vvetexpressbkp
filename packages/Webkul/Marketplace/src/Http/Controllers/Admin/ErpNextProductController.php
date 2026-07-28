@@ -4,6 +4,7 @@ namespace Webkul\Marketplace\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Webkul\Marketplace\Concerns\ClearsResponseCache;
 use Webkul\Marketplace\Http\Controllers\Controller;
 use Webkul\Marketplace\Models\ErpNextProduct;
 use Webkul\Product\Repositories\ProductRepository;
@@ -24,6 +25,8 @@ use Webkul\Product\Repositories\ProductRepository;
  */
 class ErpNextProductController extends Controller
 {
+    use ClearsResponseCache;
+
     public function __construct(protected ProductRepository $productRepository) {}
 
     public function index(): View
@@ -47,6 +50,8 @@ class ErpNextProductController extends Controller
         ], $mapping->product_id);
 
         $mapping->update(['is_hidden_from_public' => $hide]);
+
+        $this->clearResponseCache();
 
         session()->flash('success', $hide
             ? 'Product hidden from the public storefront.'

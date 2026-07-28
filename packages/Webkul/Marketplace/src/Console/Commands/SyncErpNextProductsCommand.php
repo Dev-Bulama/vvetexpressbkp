@@ -5,6 +5,7 @@ namespace Webkul\Marketplace\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Core\Models\Channel;
+use Webkul\Marketplace\Concerns\ClearsResponseCache;
 use Webkul\Marketplace\ERPNext\ERPNextClient;
 use Webkul\Marketplace\Models\ErpNextCategory;
 use Webkul\Marketplace\Models\ErpNextProduct;
@@ -28,6 +29,8 @@ use Webkul\Product\Repositories\ProductRepository;
  */
 class SyncErpNextProductsCommand extends Command
 {
+    use ClearsResponseCache;
+
     protected $signature = 'erpnext:sync-products';
 
     protected $description = 'Sync sellable products from the connected ERPNext instance into the catalog';
@@ -79,6 +82,10 @@ class SyncErpNextProductsCommand extends Command
             } catch (\Throwable $e) {
                 $this->error('ERPNext request failed: '.$e->getMessage());
 
+                if ($synced > 0) {
+                    $this->clearResponseCache();
+                }
+
                 return $synced > 0 ? self::SUCCESS : self::FAILURE;
             }
 
@@ -99,6 +106,15 @@ class SyncErpNextProductsCommand extends Command
 
         if ($this->itemsWithoutImage > 0) {
             $this->warn("{$this->itemsWithoutImage} synced item(s) had no image field in ERPNext at all - check the Item's Image field there, this isn't a download failure.");
+        }
+
+        // The homepage and category/product listing routes are behind
+        // spatie/laravel-responsecache with no built-in invalidation for
+        // catalog changes - without this, a newly synced price, image, or
+        // category assignment stays invisible on the live storefront until
+        // the cache's own (long) lifetime expires.
+        if ($synced > 0) {
+            $this->clearResponseCache();
         }
 
         return self::SUCCESS;
