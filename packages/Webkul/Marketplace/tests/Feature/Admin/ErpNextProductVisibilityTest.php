@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Webkul\Marketplace\Models\ErpNextProduct;
+use Webkul\Product\Models\ProductImage;
 
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
@@ -26,6 +27,42 @@ it('lists every ERPNext-synced product for admin review', function () {
     $response->assertSee($product->sku);
     $response->assertSee('ITEM-001');
     $response->assertSee('Public');
+});
+
+it('shows the product image on the ERPNext products list when one was synced', function () {
+    $product = $this->makeTestProduct();
+
+    ProductImage::create([
+        'product_id' => $product->id,
+        'path' => 'product/'.$product->id.'/erpnext-photo.jpg',
+        'position' => 1,
+    ]);
+
+    ErpNextProduct::create([
+        'product_id' => $product->id,
+        'item_code' => 'ITEM-005',
+        'last_synced_at' => now(),
+    ]);
+
+    $response = get(route('marketplace.admin.erpnext-products.index'));
+
+    $response->assertOk();
+    $response->assertSee('erpnext-photo.jpg');
+});
+
+it('shows a "no image" placeholder when ERPNext never returned an image for the item', function () {
+    $product = $this->makeTestProduct();
+
+    ErpNextProduct::create([
+        'product_id' => $product->id,
+        'item_code' => 'ITEM-006',
+        'last_synced_at' => now(),
+    ]);
+
+    $response = get(route('marketplace.admin.erpnext-products.index'));
+
+    $response->assertOk();
+    $response->assertSee('No image');
 });
 
 it('hides an ERPNext product from the public storefront when toggled', function () {

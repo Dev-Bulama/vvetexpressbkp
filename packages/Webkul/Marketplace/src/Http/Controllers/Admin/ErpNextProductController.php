@@ -28,7 +28,7 @@ class ErpNextProductController extends Controller
 
     public function index(): View
     {
-        $mappings = ErpNextProduct::with('product')
+        $mappings = ErpNextProduct::with(['product', 'product.images'])
             ->latest('last_synced_at')
             ->paginate(20);
 

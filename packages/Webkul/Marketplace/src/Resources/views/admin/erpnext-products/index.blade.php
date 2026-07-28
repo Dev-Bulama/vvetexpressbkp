@@ -28,6 +28,7 @@
             <table class="min-w-full text-left text-sm">
                 <thead>
                     <tr class="border-b border-gray-200 text-gray-600 dark:border-gray-800 dark:text-gray-300">
+                        <th class="px-4 py-3 font-semibold">Image</th>
                         <th class="px-4 py-3 font-semibold">SKU</th>
                         <th class="px-4 py-3 font-semibold">Product</th>
                         <th class="px-4 py-3 font-semibold">Item Code</th>
@@ -39,7 +40,15 @@
 
                 <tbody>
                     @foreach ($mappings as $mapping)
+                        @php $image = $mapping->product?->images?->first(); @endphp
                         <tr class="border-b border-gray-100 text-gray-700 last:border-0 dark:border-gray-800 dark:text-gray-300">
+                            <td class="px-4 py-3">
+                                @if ($image)
+                                    <img src="{{ $image->url }}" alt="{{ $mapping->product?->name }}" class="h-12 w-12 rounded-md object-cover" />
+                                @else
+                                    <div class="flex h-12 w-12 items-center justify-center rounded-md bg-gray-100 text-[10px] text-gray-400 dark:bg-gray-800">No image</div>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">{{ $mapping->product?->sku }}</td>
                             <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">{{ $mapping->product?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $mapping->item_code }}</td>
