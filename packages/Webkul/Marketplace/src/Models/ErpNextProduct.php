@@ -17,10 +17,12 @@ class ErpNextProduct extends Model
     protected $fillable = [
         'product_id',
         'item_code',
+        'is_hidden_from_public',
         'last_synced_at',
     ];
 
     protected $casts = [
+        'is_hidden_from_public' => 'boolean',
         'last_synced_at' => 'datetime',
     ];
 

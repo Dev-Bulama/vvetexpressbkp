@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Webkul\Marketplace\Http\Controllers\Admin\ErpNextProductController;
 use Webkul\Marketplace\Http\Controllers\Admin\SellerController;
 use Webkul\Marketplace\Http\Controllers\Admin\VendorCatalogueCoverageController;
 
@@ -15,5 +16,10 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
         Route::get('', 'index')->name('marketplace.admin.catalogue-coverage.index');
         Route::get('{id}', 'show')->name('marketplace.admin.catalogue-coverage.show');
         Route::post('{id}/remind', 'remind')->name('marketplace.admin.catalogue-coverage.remind');
+    });
+
+    Route::controller(ErpNextProductController::class)->prefix('marketplace/erpnext-products')->group(function () {
+        Route::get('', 'index')->name('marketplace.admin.erpnext-products.index');
+        Route::post('{id}/toggle-visibility', 'toggleVisibility')->name('marketplace.admin.erpnext-products.toggle-visibility');
     });
 });

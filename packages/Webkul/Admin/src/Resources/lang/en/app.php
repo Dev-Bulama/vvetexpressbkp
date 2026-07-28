@@ -5301,6 +5301,7 @@ return [
                 'data-transfer' => 'Data Transfer',
                 'discount' => 'Discount',
                 'email-templates' => 'Email Templates',
+                'erpnext-products' => 'ERPNext Products',
                 'events' => 'Events',
                 'exchange-rates' => 'Exchange Rates',
                 'gdpr-data-requests' => 'GDPR Data Requests',

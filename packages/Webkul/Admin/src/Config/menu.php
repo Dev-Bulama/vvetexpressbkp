@@ -424,5 +424,11 @@ return [
         'route' => 'marketplace.admin.catalogue-coverage.index',
         'sort' => 2,
         'icon' => '',
+    ], [
+        'key' => 'marketplace.erpnext-products',
+        'name' => 'admin::app.components.layouts.sidebar.erpnext-products',
+        'route' => 'marketplace.admin.erpnext-products.index',
+        'sort' => 3,
+        'icon' => '',
     ],
 ];

@@ -125,12 +125,21 @@ class SyncErpNextProductsCommand extends Command
         if ($mapping) {
             $product = $productRepository->findOrFail($mapping->product_id);
 
-            $product = $productRepository->update([
+            $updateData = [
                 'name' => $name,
                 'price' => $price,
-                'status' => 1,
-                'visible_individually' => 1,
-            ], $product->id);
+            ];
+
+            // An admin may have deliberately hidden a confidential item from
+            // the public storefront (see Admin\ErpNextProductController) -
+            // a routine re-sync must never silently flip status/
+            // visible_individually back on and undo that.
+            if (! $mapping->is_hidden_from_public) {
+                $updateData['status'] = 1;
+                $updateData['visible_individually'] = 1;
+            }
+
+            $product = $productRepository->update($updateData, $product->id);
         } else {
             $sku = 'ERPNEXT-'.$itemCode;
 

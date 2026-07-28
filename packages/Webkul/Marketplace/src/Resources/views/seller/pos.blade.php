@@ -43,6 +43,12 @@
     .recent-sales table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
     .recent-sales th, .recent-sales td { text-align: left; padding: 9px 14px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
     .recent-sales th { background: #f8fafc; color: #6b7280; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+
+    @media (max-width: 860px) {
+        .pos-layout { display: block; }
+
+        .cart-panel { position: static; max-height: none; margin-top: 20px; }
+    }
 </style>
 
 <div class="pos-layout">

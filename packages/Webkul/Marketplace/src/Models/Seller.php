@@ -44,6 +44,7 @@ class Seller extends Authenticatable implements SellerContract
     protected $fillable = [
         'name',
         'shop_name',
+        'logo_path',
         'email',
         'password',
         'phone',
@@ -99,6 +100,13 @@ class Seller extends Authenticatable implements SellerContract
     {
         return $this->verification_video_path
             ? Storage::disk('public')->url($this->verification_video_path)
+            : null;
+    }
+
+    public function logoUrl(): ?string
+    {
+        return $this->logo_path
+            ? Storage::disk('public')->url($this->logo_path)
             : null;
     }
 

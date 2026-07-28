@@ -38,17 +38,61 @@
         .stat-card { background: #fff; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
         .stat-card .label { font-size: 12px; color: #6b7280; }
         .stat-card .value { font-size: 22px; font-weight: 700; color: #11455B; margin-top: 4px; }
+
+        .menu-toggle { display: none; background: none; border: none; padding: 4px; cursor: pointer; }
+        .menu-toggle svg { width: 24px; height: 24px; color: #11455B; }
+        .sidebar-overlay { display: none; }
+
+        /* Below this width the sidebar becomes an off-canvas drawer (hidden
+           by default, slides in over the content) opened via the hamburger
+           button in the topbar, instead of permanently squeezing the page
+           into a sliver next to a full-height nav column. */
+        @media (max-width: 860px) {
+            .shell { display: block; }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 240px;
+                z-index: 40;
+                transform: translateX(-100%);
+                transition: transform .2s ease;
+            }
+
+            .sidebar.open { transform: translateX(0); }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,.4);
+                z-index: 30;
+            }
+
+            .sidebar-overlay.open { display: block; }
+
+            .content { width: 100%; }
+
+            .menu-toggle { display: block; }
+
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
     </style>
 </head>
 <body>
     <div class="shell">
-        <aside class="sidebar">
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="document.getElementById('seller-sidebar').classList.remove('open'); this.classList.remove('open');"></div>
+
+        <aside class="sidebar" id="seller-sidebar">
             <div class="brand">Vet<span>Express</span> Seller</div>
 
             <nav>
                 <a href="{{ route('marketplace.seller.dashboard.index') }}" class="{{ ($active ?? '') === 'dashboard' ? 'active' : '' }}">Dashboard</a>
                 <a href="{{ route('marketplace.seller.pos.index') }}" class="{{ ($active ?? '') === 'pos' ? 'active' : '' }}">Point of Sale</a>
                 <a href="{{ route('marketplace.seller.products.index') }}" class="{{ ($active ?? '') === 'products' ? 'active' : '' }}">Products</a>
+                <a href="{{ route('marketplace.seller.profile.edit') }}" class="{{ ($active ?? '') === 'profile' ? 'active' : '' }}">Profile</a>
             </nav>
 
             @php $seller = $seller ?? auth()->guard('seller')->user(); @endphp
@@ -66,6 +110,10 @@
 
         <div class="content">
             <div class="topbar">
+                <button type="button" class="menu-toggle" aria-label="Open menu" onclick="document.getElementById('seller-sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open');">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                </button>
+
                 <h1>{{ $heading ?? ($title ?? 'Dashboard') }}</h1>
             </div>
 
