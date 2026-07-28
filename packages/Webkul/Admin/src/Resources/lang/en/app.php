@@ -5301,6 +5301,7 @@ return [
                 'data-transfer' => 'Data Transfer',
                 'discount' => 'Discount',
                 'email-templates' => 'Email Templates',
+                'erpnext-categories' => 'ERPNext Categories',
                 'erpnext-products' => 'ERPNext Products',
                 'events' => 'Events',
                 'exchange-rates' => 'Exchange Rates',

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Webkul\Marketplace\Http\Controllers\Admin\ErpNextCategoryController;
 use Webkul\Marketplace\Http\Controllers\Admin\ErpNextProductController;
 use Webkul\Marketplace\Http\Controllers\Admin\MetricsController;
 use Webkul\Marketplace\Http\Controllers\Admin\SellerController;
@@ -22,6 +23,12 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
     Route::controller(ErpNextProductController::class)->prefix('marketplace/erpnext-products')->group(function () {
         Route::get('', 'index')->name('marketplace.admin.erpnext-products.index');
         Route::post('{id}/toggle-visibility', 'toggleVisibility')->name('marketplace.admin.erpnext-products.toggle-visibility');
+    });
+
+    Route::controller(ErpNextCategoryController::class)->prefix('marketplace/erpnext-categories')->group(function () {
+        Route::get('', 'index')->name('marketplace.admin.erpnext-categories.index');
+        Route::post('sync', 'sync')->name('marketplace.admin.erpnext-categories.sync');
+        Route::post('{id}/toggle-local', 'toggleLocal')->name('marketplace.admin.erpnext-categories.toggle-local');
     });
 
     Route::get('metrics', [MetricsController::class, 'index'])->name('marketplace.admin.metrics.index');

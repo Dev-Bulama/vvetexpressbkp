@@ -56,6 +56,30 @@ class ERPNextClient
     }
 
     /**
+     * One page of ERPNext's Item Group doctype - the category equivalent
+     * products are grouped under via their own `item_group` field. `name`
+     * is Frappe's real primary key for the doctype (stable even if
+     * `item_group_name` is later renamed), so it's the only safe
+     * synchronization identifier - never match on the display name.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function fetchItemGroups(int $limitStart = 0, int $limitPageLength = 100): array
+    {
+        $response = $this->client()->get('/api/resource/Item Group', [
+            'fields' => json_encode([
+                'name', 'item_group_name', 'parent_item_group', 'is_group',
+            ]),
+            'limit_start' => $limitStart,
+            'limit_page_length' => $limitPageLength,
+        ]);
+
+        $response->throw();
+
+        return $response->json('data') ?? [];
+    }
+
+    /**
      * Total on-hand stock per item code, summed across every ERPNext
      * warehouse (the Bin doctype tracks stock per-warehouse, not per-item).
      *

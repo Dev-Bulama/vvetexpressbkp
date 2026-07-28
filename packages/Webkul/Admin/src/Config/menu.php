@@ -430,6 +430,12 @@ return [
         'route' => 'marketplace.admin.erpnext-products.index',
         'sort' => 3,
         'icon' => '',
+    ], [
+        'key' => 'marketplace.erpnext-categories',
+        'name' => 'admin::app.components.layouts.sidebar.erpnext-categories',
+        'route' => 'marketplace.admin.erpnext-categories.index',
+        'sort' => 4,
+        'icon' => '',
     ],
 
     /**

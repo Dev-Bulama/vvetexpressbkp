@@ -12,6 +12,7 @@ use Webkul\CMS\Models\Page as CmsPage;
 use Webkul\Core\Models\Channel;
 use Webkul\Core\Models\CoreConfig;
 use Webkul\Marketplace\Console\Commands\SendVendorCatalogueRemindersCommand;
+use Webkul\Marketplace\Console\Commands\SyncErpNextCategoriesCommand;
 use Webkul\Marketplace\Console\Commands\SyncErpNextProductsCommand;
 use Webkul\Marketplace\Http\Middleware\DeliveryAgentGuard;
 use Webkul\Marketplace\Http\Middleware\SellerGuard;
@@ -63,6 +64,7 @@ class MarketplaceServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
+                SyncErpNextCategoriesCommand::class,
                 SyncErpNextProductsCommand::class,
                 SendVendorCatalogueRemindersCommand::class,
             ]);

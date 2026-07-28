@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Core\Models\Channel;
 use Webkul\Marketplace\ERPNext\ERPNextClient;
+use Webkul\Marketplace\Models\ErpNextCategory;
 use Webkul\Marketplace\Models\ErpNextProduct;
 use Webkul\Marketplace\Models\Seller;
 use Webkul\Marketplace\Models\SellerProduct;
@@ -53,6 +54,10 @@ class SyncErpNextProductsCommand extends Command
 
             return self::FAILURE;
         }
+
+        // Categories must exist locally before products can be linked to
+        // them via their ERPNext item_group - see SyncErpNextCategoriesCommand.
+        $this->call('erpnext:sync-categories');
 
         try {
             $stockLevels = $client->fetchStockLevels();
@@ -128,6 +133,11 @@ class SyncErpNextProductsCommand extends Command
             $updateData = [
                 'name' => $name,
                 'price' => $price,
+                // update() syncs the category pivot to exactly this array -
+                // an empty/missing category resolution must never wipe a
+                // product's existing category, only a real re-assignment
+                // should change it (see resolveCategoryIds()).
+                'categories' => $this->resolveCategoryIds($item['item_group'] ?? null, $itemCode, $product),
             ];
 
             // An admin may have deliberately hidden a confidential item from
@@ -156,6 +166,7 @@ class SyncErpNextProductsCommand extends Command
                 'weight' => (float) ($item['weight_per_unit'] ?? 0),
                 'status' => 1,
                 'visible_individually' => 1,
+                'categories' => $this->resolveCategoryIds($item['item_group'] ?? null, $itemCode, $product),
             ], $product->id);
 
             $mapping = ErpNextProduct::create([
@@ -182,6 +193,32 @@ class SyncErpNextProductsCommand extends Command
         $mapping->update(['last_synced_at' => now()]);
 
         app(FlatIndexer::class)->refresh($product);
+    }
+
+    /**
+     * Resolves an ERPNext item's `item_group` to the local category synced
+     * for it by SyncErpNextCategoriesCommand (matched by external ID, never
+     * by name). A missing or not-yet-synced item_group is not treated as
+     * "no category" - the product's current category assignment is left
+     * untouched rather than silently cleared.
+     *
+     * @return array<int, int>
+     */
+    protected function resolveCategoryIds(?string $itemGroup, string $itemCode, $product): array
+    {
+        if ($itemGroup) {
+            $categoryMapping = ErpNextCategory::where('external_id', $itemGroup)->first();
+
+            if ($categoryMapping && $categoryMapping->category_id) {
+                return [$categoryMapping->category_id];
+            }
+
+            $this->warn("Item {$itemCode}'s item_group '{$itemGroup}' has no matching local category yet - run erpnext:sync-categories, or check it exists in ERPNext. Leaving its current category assignment unchanged.");
+        }
+
+        return $product->exists
+            ? $product->categories()->pluck('categories.id')->toArray()
+            : [];
     }
 
     protected function attachImage($product, string $imagePath, ERPNextClient $client): void
