@@ -6,6 +6,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 use Webkul\Category\Models\Category;
+use Webkul\Core\Models\Channel;
 use Webkul\Marketplace\Http\Controllers\Controller;
 use Webkul\Marketplace\Models\ErpNextCategory;
 
@@ -36,6 +37,33 @@ class ErpNextCategoryController extends Controller
                 ? 'Category sync completed. '.trim(Artisan::output())
                 : 'Category sync failed: '.trim(Artisan::output())
         );
+
+        return redirect()->route('marketplace.admin.erpnext-categories.index');
+    }
+
+    /**
+     * One-click switch-over: hides every category that isn't sourced from
+     * ERPNext, so the storefront's category nav/homepage/filters (all of
+     * which only ever show status=1 categories - see
+     * CategoryRepository::getVisibleCategoryTree()) end up showing just
+     * the synced API tree. This disables rather than deletes - nothing
+     * here is destructive, and any category can be manually re-enabled
+     * from the regular Admin > Catalog > Categories screen afterward.
+     */
+    public function disableNonApiCategories(): RedirectResponse
+    {
+        $apiCategoryIds = ErpNextCategory::whereNotNull('category_id')->pluck('category_id');
+
+        $rootCategoryIds = Channel::pluck('root_category_id');
+
+        $disabledCount = Category::where('status', 1)
+            ->whereNotIn('id', $apiCategoryIds)
+            ->whereNotIn('id', $rootCategoryIds)
+            ->update(['status' => 0]);
+
+        session()->flash('success', $disabledCount
+            ? "Disabled {$disabledCount} non-ERPNext categor".($disabledCount === 1 ? 'y' : 'ies').' - only categories synced from ERPNext are visible on the storefront now.'
+            : 'No non-ERPNext categories were enabled - nothing to disable.');
 
         return redirect()->route('marketplace.admin.erpnext-categories.index');
     }

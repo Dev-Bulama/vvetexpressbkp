@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Webkul\Category\Models\Category;
+use Webkul\Category\Repositories\CategoryRepository;
+use Webkul\Core\Models\Channel;
 use Webkul\Marketplace\Models\ErpNextCategory;
 use Webkul\Marketplace\Models\ErpNextProduct;
 
@@ -219,6 +221,40 @@ it('lets an admin manually trigger a category re-sync from the admin page', func
         ->assertRedirect(route('marketplace.admin.erpnext-categories.index'));
 
     expect(ErpNextCategory::where('external_id', 'First Aid')->exists())->toBeTrue();
+});
+
+it('lets an admin disable every non-ERPNext category in one action, so the storefront shows only the API tree', function () {
+    $this->loginAsAdmin();
+
+    $channel = Channel::first();
+
+    $manualCategory = app(CategoryRepository::class)->create([
+        'status' => 1,
+        'display_mode' => 'products_and_description',
+        'parent_id' => $channel->root_category_id,
+        'en' => [
+            'name' => 'Old Manual Category',
+            'slug' => 'old-manual-category-'.uniqid(),
+            'locale_id' => core()->getAllLocales()->first()->id,
+        ],
+    ]);
+
+    $itemGroups = [
+        ['name' => 'API Category', 'item_group_name' => 'API Category', 'parent_item_group' => null, 'is_group' => 0],
+    ];
+    $items = [];
+    $bins = [];
+    fakeErpNext($itemGroups, $items, $bins);
+
+    Artisan::call('erpnext:sync-categories');
+    $apiCategoryId = ErpNextCategory::where('external_id', 'API Category')->first()->category_id;
+
+    post(route('marketplace.admin.erpnext-categories.disable-non-api'))
+        ->assertRedirect(route('marketplace.admin.erpnext-categories.index'));
+
+    expect(Category::find($manualCategory->id)->status)->toBe(0);
+    expect(Category::find($apiCategoryId)->status)->toBe(1);
+    expect(Category::find($channel->root_category_id)->status)->toBe(1);
 });
 
 it('lets an admin disable a synced category locally and keeps it disabled through the next sync', function () {

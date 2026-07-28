@@ -8,19 +8,33 @@
             ERPNext Categories
         </p>
 
-        <form method="POST" action="{{ route('marketplace.admin.erpnext-categories.sync') }}">
-            @csrf
-            <button type="submit" class="primary-button">
-                Sync Now
-            </button>
-        </form>
+        <div class="flex gap-2">
+            <form
+                method="POST"
+                action="{{ route('marketplace.admin.erpnext-categories.disable-non-api') }}"
+                onsubmit="return confirm('Disable every category that is not synced from ERPNext? This only disables them (nothing is deleted) - they can be re-enabled from Catalog > Categories afterward.');"
+            >
+                @csrf
+                <button type="submit" class="secondary-button">
+                    Disable Non-ERPNext Categories
+                </button>
+            </form>
+
+            <form method="POST" action="{{ route('marketplace.admin.erpnext-categories.sync') }}">
+                @csrf
+                <button type="submit" class="primary-button">
+                    Sync Now
+                </button>
+            </form>
+        </div>
     </div>
 
     <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
         The category tree synced from the connected ERPNext instance (Item Groups) - these are the same categories
         used across the storefront, filters, and product editing. Name and hierarchy are managed by ERPNext; only the
         Local Status column below is safe to change here, since a future sync will overwrite name/parent changes made
-        any other way.
+        any other way. Use "Disable Non-ERPNext Categories" to switch the storefront over to showing only the synced
+        API categories, without deleting anything else you had before.
     </p>
 
     @if (session('success'))

@@ -28,6 +28,7 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
     Route::controller(ErpNextCategoryController::class)->prefix('marketplace/erpnext-categories')->group(function () {
         Route::get('', 'index')->name('marketplace.admin.erpnext-categories.index');
         Route::post('sync', 'sync')->name('marketplace.admin.erpnext-categories.sync');
+        Route::post('disable-non-api', 'disableNonApiCategories')->name('marketplace.admin.erpnext-categories.disable-non-api');
         Route::post('{id}/toggle-local', 'toggleLocal')->name('marketplace.admin.erpnext-categories.toggle-local');
     });
 
