@@ -3,6 +3,7 @@
 namespace Webkul\Marketplace\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 use Webkul\Category\Models\Category;
@@ -71,6 +72,47 @@ class ErpNextCategoryController extends Controller
         session()->flash('success', $disabledCount
             ? "Disabled {$disabledCount} non-ERPNext categor".($disabledCount === 1 ? 'y' : 'ies').' - only categories synced from ERPNext are visible on the storefront now.'
             : 'No non-ERPNext categories were enabled - nothing to disable.');
+
+        return redirect()->route('marketplace.admin.erpnext-categories.index');
+    }
+
+    /**
+     * ERPNext often carries Item Groups the business never wants
+     * customer-facing (accounting/internal groups like "Assets" or
+     * "Delivery Fees", abandoned near-duplicates, etc.) alongside the ones
+     * that are genuinely approved for the storefront. Disabling each one
+     * individually is tedious once there are dozens of them, so this lets
+     * an admin check exactly the categories that should stay visible and
+     * disable every other ERPNext-sourced category in one action - still
+     * never touching anything ERPNext itself doesn't return, and still
+     * reversible via the per-row toggle afterward.
+     *
+     * @param  Request  $request  expects keep[] = array of category IDs to leave enabled
+     */
+    public function keepOnlySelected(Request $request): RedirectResponse
+    {
+        $keepCategoryIds = collect($request->input('keep', []))->map(fn ($id) => (int) $id)->all();
+
+        $erpNextCategoryIds = ErpNextCategory::whereNotNull('category_id')->pluck('category_id', 'category_id');
+
+        $toEnable = array_intersect($erpNextCategoryIds->all(), $keepCategoryIds);
+        $toDisable = array_diff($erpNextCategoryIds->all(), $keepCategoryIds);
+
+        if ($toEnable) {
+            Category::whereIn('id', $toEnable)->update(['status' => 1]);
+            ErpNextCategory::whereIn('category_id', $toEnable)->update(['is_disabled_locally' => false]);
+        }
+
+        if ($toDisable) {
+            Category::whereIn('id', $toDisable)->update(['status' => 0]);
+            ErpNextCategory::whereIn('category_id', $toDisable)->update(['is_disabled_locally' => true]);
+        }
+
+        if ($toEnable || $toDisable) {
+            $this->clearResponseCache();
+        }
+
+        session()->flash('success', count($toEnable).' ERPNext categor'.(count($toEnable) === 1 ? 'y' : 'ies').' kept visible, '.count($toDisable).' disabled.');
 
         return redirect()->route('marketplace.admin.erpnext-categories.index');
     }

@@ -257,6 +257,62 @@ it('lets an admin disable every non-ERPNext category in one action, so the store
     expect(Category::find($channel->root_category_id)->status)->toBe(1);
 });
 
+it('lets an admin keep only checked ERPNext categories visible, disabling the rest in one action', function () {
+    $this->loginAsAdmin();
+
+    $itemGroups = [
+        ['name' => 'Approved One', 'item_group_name' => 'Approved One', 'parent_item_group' => null, 'is_group' => 0],
+        ['name' => 'Approved Two', 'item_group_name' => 'Approved Two', 'parent_item_group' => null, 'is_group' => 0],
+        ['name' => 'Assets', 'item_group_name' => 'Assets', 'parent_item_group' => null, 'is_group' => 0],
+        ['name' => 'Delivery Fees', 'item_group_name' => 'Delivery Fees', 'parent_item_group' => null, 'is_group' => 0],
+    ];
+    $items = [];
+    $bins = [];
+    fakeErpNext($itemGroups, $items, $bins);
+
+    Artisan::call('erpnext:sync-categories');
+
+    $approvedOneId = ErpNextCategory::where('external_id', 'Approved One')->first()->category_id;
+    $approvedTwoId = ErpNextCategory::where('external_id', 'Approved Two')->first()->category_id;
+    $assetsId = ErpNextCategory::where('external_id', 'Assets')->first()->category_id;
+    $deliveryFeesId = ErpNextCategory::where('external_id', 'Delivery Fees')->first()->category_id;
+
+    post(route('marketplace.admin.erpnext-categories.keep-only-selected'), [
+        'keep' => [$approvedOneId, $approvedTwoId],
+    ])->assertRedirect(route('marketplace.admin.erpnext-categories.index'));
+
+    expect(Category::find($approvedOneId)->status)->toBe(1);
+    expect(Category::find($approvedTwoId)->status)->toBe(1);
+    expect(Category::find($assetsId)->status)->toBe(0);
+    expect(Category::find($deliveryFeesId)->status)->toBe(0);
+
+    expect(ErpNextCategory::where('external_id', 'Assets')->first()->is_disabled_locally)->toBeTrue();
+    expect(ErpNextCategory::where('external_id', 'Approved One')->first()->is_disabled_locally)->toBeFalse();
+});
+
+it('keeps unwanted ERPNext categories disabled through a future sync after "keep only checked" was used', function () {
+    $this->loginAsAdmin();
+
+    $itemGroups = [
+        ['name' => 'Approved', 'item_group_name' => 'Approved', 'parent_item_group' => null, 'is_group' => 0],
+        ['name' => 'Unwanted', 'item_group_name' => 'Unwanted', 'parent_item_group' => null, 'is_group' => 0],
+    ];
+    $items = [];
+    $bins = [];
+    fakeErpNext($itemGroups, $items, $bins);
+
+    Artisan::call('erpnext:sync-categories');
+    $approvedId = ErpNextCategory::where('external_id', 'Approved')->first()->category_id;
+    $unwantedId = ErpNextCategory::where('external_id', 'Unwanted')->first()->category_id;
+
+    post(route('marketplace.admin.erpnext-categories.keep-only-selected'), ['keep' => [$approvedId]]);
+
+    Artisan::call('erpnext:sync-categories');
+
+    expect(Category::find($unwantedId)->status)->toBe(0);
+    expect(Category::find($approvedId)->status)->toBe(1);
+});
+
 it('lets an admin disable a synced category locally and keeps it disabled through the next sync', function () {
     $this->loginAsAdmin();
 
