@@ -62,6 +62,7 @@ return [
             'password' => 'Password',
             'sign-in-button' => 'Sign In',
             'subscribe-to-newsletter' => 'Subscribe to newsletter',
+            'error' => 'Something went wrong while creating your account. Please try again, or contact support if the problem continues.',
             'success' => 'Account created successfully.',
             'success-verify' => 'Account created successfully, an e-mail has been sent for verification.',
             'terms-conditions' => ' Terms & Conditions',

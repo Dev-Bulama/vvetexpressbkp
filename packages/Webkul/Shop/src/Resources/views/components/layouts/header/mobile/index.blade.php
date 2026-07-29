@@ -351,9 +351,9 @@
                     </div>
                 </x-slot>
 
-                <x-slot:content class="!p-0">
+                <x-slot:content class="!p-0 flex h-full flex-col">
                     <!-- Account Profile Hero Section -->
-                    <div class="p-4 border-b border-zinc-200">
+                    <div class="shrink-0 p-4 border-b border-zinc-200">
                         <div class="grid grid-cols-[auto_1fr] items-center gap-4 rounded-xl border border-zinc-200 p-2.5">
                             <div>
                                 <img
@@ -389,7 +389,9 @@
                     {!! view_render_event('bagisto.shop.components.layouts.header.mobile.drawer.categories.before') !!}
 
                     <!-- Mobile category view -->
-                    <v-mobile-category ref="mobileCategory"></v-mobile-category>
+                    <div class="min-h-0 flex-1">
+                        <v-mobile-category ref="mobileCategory"></v-mobile-category>
+                    </div>
 
                     {!! view_render_event('bagisto.shop.components.layouts.header.mobile.drawer.categories.after') !!}
                 </x-slot>
@@ -397,7 +399,7 @@
                 <x-slot:footer>
                     <!-- Localization & Currency Section -->
                 @if(core()->getCurrentChannel()->locales()->count() > 1 || core()->getCurrentChannel()->currencies()->count() > 1 )
-                                    <div class="fixed bottom-0 z-10 grid w-full max-w-full grid-cols-[1fr_auto_1fr] items-center justify-items-center border-t border-zinc-200 bg-white px-5 ltr:left-0 rtl:right-0">
+                                    <div class="sticky bottom-0 z-10 grid w-full max-w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center justify-items-center border-t border-zinc-200 bg-white px-5">
                                         <!-- Filter Drawer -->
                                         <x-shop::drawer
                                             position="bottom"

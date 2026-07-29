@@ -11,6 +11,7 @@ use Spatie\ResponseCache\ResponseCache;
 use Webkul\CMS\Models\Page as CmsPage;
 use Webkul\Core\Models\Channel;
 use Webkul\Core\Models\CoreConfig;
+use Webkul\Marketplace\Console\Commands\EnsureFooterPagesCommand;
 use Webkul\Marketplace\Console\Commands\SendVendorCatalogueRemindersCommand;
 use Webkul\Marketplace\Console\Commands\SyncErpNextCategoriesCommand;
 use Webkul\Marketplace\Console\Commands\SyncErpNextProductsCommand;
@@ -67,6 +68,7 @@ class MarketplaceServiceProvider extends ServiceProvider
                 SyncErpNextCategoriesCommand::class,
                 SyncErpNextProductsCommand::class,
                 SendVendorCatalogueRemindersCommand::class,
+                EnsureFooterPagesCommand::class,
             ]);
         }
 

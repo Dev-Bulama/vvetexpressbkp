@@ -48,6 +48,16 @@ class RegistrationController extends Controller
     {
         $customerGroup = core()->getConfigData('customer.settings.create_new_account_options.default_group');
 
+        $customerGroupModel = $this->customerGroupRepository->findOneWhere(['code' => $customerGroup]);
+
+        if (! $customerGroupModel) {
+            report(new \RuntimeException("Customer registration failed: configured default customer group '{$customerGroup}' does not exist in the customer_groups table."));
+
+            session()->flash('error', trans('shop::app.customers.signup-form.error'));
+
+            return redirect()->back()->withInput();
+        }
+
         $subscription = $this->subscriptionRepository->findOneWhere(['email' => request()->input('email')]);
 
         $data = array_merge($registrationRequest->only([
@@ -60,7 +70,7 @@ class RegistrationController extends Controller
             'password' => bcrypt(request()->input('password')),
             'api_token' => Str::random(80),
             'is_verified' => ! core()->getConfigData('customer.settings.email.verification'),
-            'customer_group_id' => $this->customerGroupRepository->findOneWhere(['code' => $customerGroup])->id,
+            'customer_group_id' => $customerGroupModel->id,
             'channel_id' => core()->getCurrentChannel()->id,
             'token' => md5(uniqid(rand(), true)),
             'subscribed_to_news_letter' => (bool) (request()->input('is_subscribed') ?? $subscription?->is_subscribed),

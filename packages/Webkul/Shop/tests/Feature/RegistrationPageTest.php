@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Mail;
 use Webkul\Admin\Mail\Customer\RegistrationNotification as AdminRegistrationNotification;
 use Webkul\Core\Models\CoreConfig;
+use Webkul\Customer\Models\CustomerGroup;
 use Webkul\Shop\Mail\Customer\EmailVerificationNotification;
 use Webkul\Shop\Mail\Customer\RegistrationNotification as ShopRegistrationNotification;
 
@@ -96,6 +97,31 @@ it('successfully registers a customer and send mail to the customer verify the a
     Mail::assertQueued(EmailVerificationNotification::class);
 
     Mail::assertQueuedCount(1);
+});
+
+it('fails registration gracefully instead of crashing when the configured default customer group does not exist', function () {
+    // Simulates the state a botched data migration (e.g. moving to a new
+    // domain/DB without carrying over the customer_groups seed data) can
+    // leave production in: the "general" group referenced by
+    // customer.settings.create_new_account_options.default_group is gone,
+    // so the lookup that used to do ->id on the result crashed with a 500
+    // instead of failing the request cleanly.
+    CustomerGroup::where('code', 'general')->delete();
+
+    $requestedCustomer = [
+        'first_name' => fake()->firstName(),
+        'last_name' => fake()->lastName(),
+        'email' => fake()->email(),
+        'password' => 'admin123',
+        'password_confirmation' => 'admin123',
+    ];
+
+    // Act and Assert.
+    post(route('shop.customers.register.store'), $requestedCustomer)
+        ->assertRedirect()
+        ->assertSessionHas('error', trans('shop::app.customers.signup-form.error'));
+
+    expect(\Webkul\Customer\Models\Customer::where('email', $requestedCustomer['email'])->exists())->toBeFalse();
 });
 
 it('registers a customer successfully and sends a registration email to customer and admin along with a success message', function () {
