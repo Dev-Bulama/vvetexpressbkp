@@ -134,18 +134,19 @@ it('hides an ERPNext product from the public storefront when toggled', function 
     $mapping->refresh();
     $product->refresh();
 
-    expect($mapping->is_hidden_from_public)->toBeTrue();
+    expect($mapping->isHidden())->toBeTrue();
+    expect($mapping->visibility_override)->toBe(ErpNextProduct::OVERRIDE_HIDDEN);
     expect((bool) $product->status)->toBeFalse();
     expect((bool) $product->visible_individually)->toBeFalse();
 });
 
-it('makes a hidden ERPNext product public again when toggled back', function () {
+it('makes a hidden ERPNext product public again when toggled back, overriding the automatic completeness rule', function () {
     $product = $this->makeTestProduct();
 
     $mapping = ErpNextProduct::create([
         'product_id' => $product->id,
         'item_code' => 'ITEM-003',
-        'is_hidden_from_public' => true,
+        'visibility_override' => ErpNextProduct::OVERRIDE_HIDDEN,
         'last_synced_at' => now(),
     ]);
 
@@ -154,7 +155,8 @@ it('makes a hidden ERPNext product public again when toggled back', function () 
     $mapping->refresh();
     $product->refresh();
 
-    expect($mapping->is_hidden_from_public)->toBeFalse();
+    expect($mapping->isHidden())->toBeFalse();
+    expect($mapping->visibility_override)->toBe(ErpNextProduct::OVERRIDE_VISIBLE);
     expect((bool) $product->status)->toBeTrue();
     expect((bool) $product->visible_individually)->toBeTrue();
 });
@@ -171,7 +173,7 @@ it('does not silently re-publish a product an admin hid the next time ERPNext is
     ErpNextProduct::create([
         'product_id' => $product->id,
         'item_code' => 'ITEM-004',
-        'is_hidden_from_public' => true,
+        'visibility_override' => ErpNextProduct::OVERRIDE_HIDDEN,
         'last_synced_at' => now()->subDay(),
     ]);
 

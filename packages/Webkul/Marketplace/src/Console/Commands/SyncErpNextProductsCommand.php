@@ -142,30 +142,37 @@ class SyncErpNextProductsCommand extends Command
         $price = (float) ($item['standard_rate'] ?? 0);
         $quantity = (int) ($stockLevels[$itemCode] ?? 0);
         $name = $item['item_name'] ?? $itemCode;
+        $description = trim((string) ($item['description'] ?? ''));
+
+        $baseData = [
+            'name' => $name,
+            'price' => $price,
+        ];
+
+        // Never overwrite an existing description with a blank one just
+        // because this particular ERPNext response happened to omit it -
+        // only apply it when ERPNext actually provided text.
+        if ($description !== '') {
+            $baseData['description'] = $description;
+            $baseData['short_description'] = $description;
+        }
 
         if ($mapping) {
             $product = $productRepository->findOrFail($mapping->product_id);
 
-            $updateData = [
-                'name' => $name,
-                'price' => $price,
+            $product = $productRepository->update($baseData + [
                 // update() syncs the category pivot to exactly this array -
                 // an empty/missing category resolution must never wipe a
                 // product's existing category, only a real re-assignment
                 // should change it (see resolveCategoryIds()).
                 'categories' => $this->resolveCategoryIds($item['item_group'] ?? null, $itemCode, $product),
-            ];
-
-            // An admin may have deliberately hidden a confidential item from
-            // the public storefront (see Admin\ErpNextProductController) -
-            // a routine re-sync must never silently flip status/
-            // visible_individually back on and undo that.
-            if (! $mapping->is_hidden_from_public) {
-                $updateData['status'] = 1;
-                $updateData['visible_individually'] = 1;
-            }
-
-            $product = $productRepository->update($updateData, $product->id);
+                // Bagisto's ProductImageRepository::upload() deletes every
+                // existing image whenever the 'images' key is missing from
+                // update() data (it's built for a full admin-form submit,
+                // not a partial patch) - every update() call here must
+                // re-supply the product's current images or they vanish.
+                'images' => $this->preserveImagesData($product),
+            ], $product->id);
         } else {
             $sku = 'ERPNEXT-'.$itemCode;
 
@@ -175,13 +182,11 @@ class SyncErpNextProductsCommand extends Command
                 'type' => 'simple',
             ]);
 
-            $product = $productRepository->update([
-                'name' => $name,
+            $product = $productRepository->update($baseData + [
                 'url_key' => str($sku)->slug(),
-                'price' => $price,
                 'weight' => (float) ($item['weight_per_unit'] ?? 0),
-                'status' => 1,
-                'visible_individually' => 1,
+                'status' => 0,
+                'visible_individually' => 0,
                 'categories' => $this->resolveCategoryIds($item['item_group'] ?? null, $itemCode, $product),
             ], $product->id);
 
@@ -197,6 +202,30 @@ class SyncErpNextProductsCommand extends Command
             $this->attachImage($product, $item['image'], $client);
         }
 
+        // Only complete listings (a real price and at least one photo) are
+        // fit for customers to see - an admin can still override either
+        // way via Admin\ErpNextProductController, and that decision always
+        // wins over this automatic rule on every future sync.
+        $isComplete = $price > 0 && $product->images()->exists();
+
+        $visible = match ($mapping->visibility_override) {
+            ErpNextProduct::OVERRIDE_HIDDEN => false,
+            ErpNextProduct::OVERRIDE_VISIBLE => true,
+            default => $isComplete,
+        };
+
+        $productRepository->update([
+            'status' => $visible ? 1 : 0,
+            'visible_individually' => $visible ? 1 : 0,
+            // Re-supplied again here too - this update() call happens
+            // after attachImage() may have just added a brand new image,
+            // which would otherwise be wiped immediately by this very
+            // call, and update() wipes the category pivot exactly the
+            // same way when 'categories' is missing.
+            'images' => $this->preserveImagesData($product),
+            'categories' => $product->categories()->pluck('categories.id')->toArray(),
+        ], $product->id);
+
         SellerProduct::updateOrCreate(
             ['seller_id' => $seller->id, 'product_id' => $product->id],
             [
@@ -208,7 +237,7 @@ class SyncErpNextProductsCommand extends Command
 
         $mapping->update(['last_synced_at' => now()]);
 
-        app(FlatIndexer::class)->refresh($product);
+        app(FlatIndexer::class)->refresh($product->fresh());
     }
 
     /**
@@ -235,6 +264,33 @@ class SyncErpNextProductsCommand extends Command
         return $product->exists
             ? $product->categories()->pluck('categories.id')->toArray()
             : [];
+    }
+
+    /**
+     * Builds the 'images' => ['files' => [id => keep, ...]] structure
+     * ProductImageRepository::upload() expects to recognize "this existing
+     * image should be kept" (any non-UploadedFile value keyed by the
+     * image's own ID) - without this, update() treats a missing/empty
+     * 'images' key as "the product now has zero images" and deletes every
+     * one of them, exactly like the same repository does for 'categories'.
+     *
+     * @return array<string, mixed>
+     */
+    protected function preserveImagesData($product): array
+    {
+        if (! $product->exists) {
+            return [];
+        }
+
+        $existingImageIds = $product->images()->pluck('id');
+
+        if ($existingImageIds->isEmpty()) {
+            return [];
+        }
+
+        return [
+            'files' => $existingImageIds->mapWithKeys(fn ($id) => [$id => true])->all(),
+        ];
     }
 
     protected function attachImage($product, string $imagePath, ERPNextClient $client): void

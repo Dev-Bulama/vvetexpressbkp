@@ -20,9 +20,10 @@
     </div>
 
     <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-        Every product synced in from the external ERPNext instance. Hide any confidential or internal-only item from
-        the public storefront without removing it from the catalog - hidden items stay hidden through future syncs
-        until you make them visible again here.
+        Every product synced in from the external ERPNext instance. Only listings with a real price and at least one
+        photo show to customers automatically - an incomplete item is hidden until it's fixed in ERPNext, unless you
+        override that below. Hide any confidential or internal-only item from the public storefront without removing
+        it from the catalog either way - your decision stays through future syncs until you change it again here.
         @if ($uncategorizedCount > 0)
             <span class="font-medium text-amber-700 dark:text-amber-400">{{ $uncategorizedCount }} {{ $uncategorizedCount === 1 ? 'product has' : 'products have' }} no ERPNext category assigned yet, so they won't appear when a customer browses by category - set the item's Item Group in ERPNext and re-run the sync to fix this.</span>
         @endif
@@ -78,27 +79,32 @@
                             </td>
                             <td class="px-4 py-3">{{ $mapping->last_synced_at?->format('d M Y, H:i') ?? '—' }}</td>
                             <td class="px-4 py-3">
+                                @php
+                                    $isPublic = (bool) $mapping->product?->status;
+                                    $isAutoDecided = is_null($mapping->visibility_override);
+                                @endphp
                                 <span
                                     @class([
                                         'rounded-full px-2.5 py-1 text-xs font-medium',
-                                        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' => $mapping->is_hidden_from_public,
-                                        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' => ! $mapping->is_hidden_from_public,
+                                        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' => ! $isPublic,
+                                        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' => $isPublic,
                                     ])
+                                    title="{{ $isAutoDecided ? ($isPublic ? 'Automatically public - has a real price and a photo.' : 'Automatically hidden - missing a real price or a photo.') : 'Manually set by an admin.' }}"
                                 >
-                                    {{ $mapping->is_hidden_from_public ? 'Hidden' : 'Public' }}
+                                    {{ $isPublic ? 'Public' : 'Hidden' }}{{ $isAutoDecided ? ' (auto)' : '' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <form method="POST" action="{{ route('marketplace.admin.erpnext-products.toggle-visibility', $mapping->id) }}">
                                     @csrf
 
-                                    @if ($mapping->is_hidden_from_public)
-                                        <button type="submit" class="font-medium text-green-600 hover:underline dark:text-green-400">
-                                            Make Public
-                                        </button>
-                                    @else
+                                    @if ($isPublic)
                                         <button type="submit" class="font-medium text-red-600 hover:underline dark:text-red-400">
                                             Hide From Public
+                                        </button>
+                                    @else
+                                        <button type="submit" class="font-medium text-green-600 hover:underline dark:text-green-400">
+                                            Make Public
                                         </button>
                                     @endif
                                 </form>
