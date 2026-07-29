@@ -2,6 +2,8 @@
 
 namespace Webkul\Marketplace\Tests\Concerns;
 
+use Webkul\Category\Models\Category;
+use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Checkout\Models\Cart;
 use Webkul\Checkout\Models\CartItem;
 use Webkul\Core\Models\Channel;
@@ -40,6 +42,23 @@ trait MarketplaceTestHelpers
         app(FlatIndexer::class)->refresh($product->fresh());
 
         return $product->fresh();
+    }
+
+    protected function makeTestCategory(string $name): Category
+    {
+        $channel = Channel::first();
+        $locale = core()->getAllLocales()->first();
+
+        return app(CategoryRepository::class)->create([
+            'status' => 1,
+            'display_mode' => 'products_and_description',
+            'parent_id' => $channel->root_category_id,
+            $locale->code => [
+                'name' => $name,
+                'slug' => str($name)->slug().'-'.str()->random(8),
+                'locale_id' => $locale->id,
+            ],
+        ]);
     }
 
     protected function makeTestSeller(array $attributes = []): Seller

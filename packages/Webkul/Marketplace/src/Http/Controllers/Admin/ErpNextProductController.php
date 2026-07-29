@@ -3,6 +3,7 @@
 namespace Webkul\Marketplace\Http\Controllers\Admin;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Webkul\Marketplace\Concerns\ClearsResponseCache;
 use Webkul\Marketplace\Http\Controllers\Controller;
@@ -29,13 +30,25 @@ class ErpNextProductController extends Controller
 
     public function __construct(protected ProductRepository $productRepository) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $mappings = ErpNextProduct::with(['product', 'product.images'])
-            ->latest('last_synced_at')
-            ->paginate(20);
+        $query = ErpNextProduct::with(['product', 'product.images', 'product.categories']);
 
-        return view('marketplace::admin.erpnext-products.index', compact('mappings'));
+        $uncategorizedOnly = $request->boolean('uncategorized');
+
+        if ($uncategorizedOnly) {
+            $query->whereHas('product', function ($productQuery) {
+                $productQuery->whereDoesntHave('categories');
+            });
+        }
+
+        $mappings = $query->latest('last_synced_at')->paginate(20)->withQueryString();
+
+        $uncategorizedCount = ErpNextProduct::whereHas('product', function ($productQuery) {
+            $productQuery->whereDoesntHave('categories');
+        })->count();
+
+        return view('marketplace::admin.erpnext-products.index', compact('mappings', 'uncategorizedCount', 'uncategorizedOnly'));
     }
 
     public function toggleVisibility(int $id): RedirectResponse

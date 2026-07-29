@@ -7,12 +7,25 @@
         <p class="py-3 text-xl font-bold text-gray-800 dark:text-white">
             ERPNext Products
         </p>
+
+        @if ($uncategorizedCount > 0)
+            <a
+                href="{{ route('marketplace.admin.erpnext-products.index', ['uncategorized' => $uncategorizedOnly ? null : 1]) }}"
+                class="rounded-full px-3.5 py-1.5 text-sm font-medium transition-all
+                    {{ $uncategorizedOnly ? 'bg-blue-600 text-white' : 'bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-200' }}"
+            >
+                {{ $uncategorizedOnly ? 'Showing uncategorized only - click to show all' : "{$uncategorizedCount} uncategorized - click to filter" }}
+            </a>
+        @endif
     </div>
 
     <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
         Every product synced in from the external ERPNext instance. Hide any confidential or internal-only item from
         the public storefront without removing it from the catalog - hidden items stay hidden through future syncs
         until you make them visible again here.
+        @if ($uncategorizedCount > 0)
+            <span class="font-medium text-amber-700 dark:text-amber-400">{{ $uncategorizedCount }} {{ $uncategorizedCount === 1 ? 'product has' : 'products have' }} no ERPNext category assigned yet, so they won't appear when a customer browses by category - set the item's Item Group in ERPNext and re-run the sync to fix this.</span>
+        @endif
     </p>
 
     @if (session('success'))
@@ -32,6 +45,7 @@
                         <th class="px-4 py-3 font-semibold">SKU</th>
                         <th class="px-4 py-3 font-semibold">Product</th>
                         <th class="px-4 py-3 font-semibold">Item Code</th>
+                        <th class="px-4 py-3 font-semibold">Category</th>
                         <th class="px-4 py-3 font-semibold">Last Synced</th>
                         <th class="px-4 py-3 font-semibold">Visibility</th>
                         <th class="px-4 py-3"></th>
@@ -52,6 +66,16 @@
                             <td class="px-4 py-3">{{ $mapping->product?->sku }}</td>
                             <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">{{ $mapping->product?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ $mapping->item_code }}</td>
+                            <td class="px-4 py-3">
+                                @php $category = $mapping->product?->categories?->first(); @endphp
+                                @if ($category)
+                                    <span class="text-gray-700 dark:text-gray-300">{{ $category->name }}</span>
+                                @else
+                                    <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                                        Uncategorized
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">{{ $mapping->last_synced_at?->format('d M Y, H:i') ?? '—' }}</td>
                             <td class="px-4 py-3">
                                 <span
