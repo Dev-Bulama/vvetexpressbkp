@@ -6,6 +6,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Webkul\Category\Models\Category;
 use Webkul\Core\Models\Channel;
 use Webkul\Marketplace\Concerns\ClearsResponseCache;
@@ -115,6 +116,99 @@ class ErpNextCategoryController extends Controller
         session()->flash('success', count($toEnable).' ERPNext categor'.(count($toEnable) === 1 ? 'y' : 'ies').' kept visible, '.count($toDisable).' disabled.');
 
         return redirect()->route('marketplace.admin.erpnext-categories.index');
+    }
+
+    /**
+     * Lets procurement maintain the approved-category decision in a
+     * spreadsheet (an "Item Group Name" column plus an Enable/Disable
+     * column - the same shape ERPNext's own Item Group report exports)
+     * and apply it in one upload, instead of clicking through dozens of
+     * categories by hand every time the decision changes. Matches each
+     * row's name against ErpNextCategory.external_id - ERPNext's own
+     * stable identifier - never against the category's possibly-since-
+     * renamed display name. Rows naming a category that hasn't synced
+     * yet (typo, or not yet pulled in) are reported back, not silently
+     * skipped.
+     */
+    public function importVisibility(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
+        ]);
+
+        $rows = IOFactory::load($request->file('file')->getRealPath())
+            ->getActiveSheet()
+            ->toArray(null, true, true, false);
+
+        $applied = 0;
+        $notFound = [];
+
+        foreach ($rows as $row) {
+            [$name, $enable] = $this->parseVisibilityRow($row);
+
+            if ($name === null || $enable === null) {
+                continue;
+            }
+
+            $mapping = ErpNextCategory::where('external_id', $name)->first();
+
+            if (! $mapping || ! $mapping->category_id) {
+                $notFound[] = $name;
+
+                continue;
+            }
+
+            Category::where('id', $mapping->category_id)->update(['status' => $enable ? 1 : 0]);
+            $mapping->update(['is_disabled_locally' => ! $enable]);
+            $applied++;
+        }
+
+        if ($applied > 0) {
+            $this->clearResponseCache();
+        }
+
+        $message = "Applied visibility for {$applied} categor".($applied === 1 ? 'y' : 'ies').' from the spreadsheet.';
+
+        if ($notFound) {
+            $message .= ' Not matched to a synced category (check spelling, or run Sync Now first): '.implode(', ', $notFound).'.';
+        }
+
+        session()->flash($applied > 0 ? 'success' : 'error', $message);
+
+        return redirect()->route('marketplace.admin.erpnext-categories.index');
+    }
+
+    /**
+     * @param  array<int, mixed>  $row
+     * @return array{0: ?string, 1: ?bool} [category name, enable] - either
+     *                                     may be null if the row doesn't contain a recognizable pair
+     */
+    protected function parseVisibilityRow(array $row): array
+    {
+        $name = null;
+        $enable = null;
+
+        foreach ($row as $cell) {
+            if (! is_string($cell)) {
+                continue;
+            }
+
+            $cell = trim($cell);
+
+            if ($cell === '') {
+                continue;
+            }
+
+            if (preg_match('/^enabled?$/i', $cell)) {
+                $enable = true;
+            } elseif (preg_match('/^disabled?$/i', $cell)) {
+                $enable = false;
+            } elseif (! preg_match('/^(item group name|title)$/i', $cell)) {
+                $name = $cell;
+            }
+        }
+
+        return [$name, $enable];
     }
 
     public function toggleLocal(int $id): RedirectResponse

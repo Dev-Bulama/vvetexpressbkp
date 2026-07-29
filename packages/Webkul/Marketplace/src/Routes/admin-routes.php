@@ -30,6 +30,7 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
         Route::post('sync', 'sync')->name('marketplace.admin.erpnext-categories.sync');
         Route::post('disable-non-api', 'disableNonApiCategories')->name('marketplace.admin.erpnext-categories.disable-non-api');
         Route::post('keep-only-selected', 'keepOnlySelected')->name('marketplace.admin.erpnext-categories.keep-only-selected');
+        Route::post('import-visibility', 'importVisibility')->name('marketplace.admin.erpnext-categories.import-visibility');
         Route::post('{id}/toggle-local', 'toggleLocal')->name('marketplace.admin.erpnext-categories.toggle-local');
     });
 

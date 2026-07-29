@@ -193,6 +193,36 @@ it('lets an admin hide a complete item, and that survives a future sync', functi
     expect((bool) $product->visible_individually)->toBeFalse();
 });
 
+it('updates the storefront price-filter index after a sync, so the price range reflects real ERPNext prices', function () {
+    // ProductRepository::update() (used throughout the sync) never
+    // triggers Bagisto's price indexer - that's only wired to the full
+    // admin product-save HTTP flow. Without an explicit reindex, the
+    // storefront's price-range filter and price sorting keep reading
+    // whatever stale index rows existed before, silently excluding every
+    // ERPNext-synced product regardless of its real price.
+    Http::fake([
+        '*/api/resource/Item Group*' => Http::response(['data' => []]),
+        '*/api/resource/Item%20Group*' => Http::response(['data' => []]),
+        '*/api/resource/Item*' => Http::response(['data' => [[
+            'item_code' => 'PRICEIDX-001',
+            'item_name' => 'Sigma Litter Sand 15kg',
+            'standard_rate' => 15635,
+            'weight_per_unit' => 15,
+            'image' => '/files/litter.jpg',
+        ]]]),
+        '*/api/resource/Bin*' => Http::response(['data' => []]),
+        'https://erp.test/files/litter.jpg' => Http::response('image-bytes', 200),
+    ]);
+
+    Artisan::call('erpnext:sync-products');
+
+    $product = ErpNextProduct::where('item_code', 'PRICEIDX-001')->first()->product;
+
+    $maxPrice = app(ProductRepository::class)->getMaxPrice(['attribute_code' => 'price']);
+
+    expect((float) $maxPrice)->toBeGreaterThanOrEqual(15635.0);
+});
+
 it('syncs the ERPNext description into the product without blanking it on a later sync that omits it', function () {
     fakeErpNextItem([
         'item_code' => 'DESC-001',

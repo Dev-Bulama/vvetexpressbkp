@@ -108,12 +108,23 @@ class SyncErpNextProductsCommand extends Command
             $this->warn("{$this->itemsWithoutImage} synced item(s) had no image field in ERPNext at all - check the Item's Image field there, this isn't a download failure.");
         }
 
-        // The homepage and category/product listing routes are behind
-        // spatie/laravel-responsecache with no built-in invalidation for
-        // catalog changes - without this, a newly synced price, image, or
-        // category assignment stays invisible on the live storefront until
-        // the cache's own (long) lifetime expires.
         if ($synced > 0) {
+            // Bagisto's storefront price-range filter and price-based
+            // sorting read from a separate denormalized product_price_
+            // indices table, not the live product price - it's normally
+            // kept in sync by the full admin product-save flow, which
+            // ProductRepository::update() called directly (as this sync
+            // does) never triggers. Without this, the filter's min/max
+            // range stays stuck at whatever old/seed data it last saw,
+            // silently excluding every ERPNext-synced product from price
+            // filtering and sorting.
+            $this->call('indexer:index', ['--type' => ['price', 'inventory'], '--mode' => ['full']]);
+
+            // The homepage and category/product listing routes are behind
+            // spatie/laravel-responsecache with no built-in invalidation
+            // for catalog changes - without this, a newly synced price,
+            // image, or category assignment stays invisible on the live
+            // storefront until the cache's own (long) lifetime expires.
             $this->clearResponseCache();
         }
 

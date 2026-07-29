@@ -38,6 +38,32 @@
         to disable everything else in one go, rather than disabling dozens one at a time.
     </p>
 
+    <div class="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+        <form method="POST" action="{{ route('marketplace.admin.erpnext-categories.import-visibility') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+            @csrf
+
+            <div>
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-200">Import Visibility From Spreadsheet</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Upload an .xlsx/.csv with an "Item Group Name" column and an Enable/Disable column (e.g. ERPNext's
+                    own Item Group report export) to apply visibility for many categories in one go.
+                </p>
+            </div>
+
+            <input
+                type="file"
+                name="file"
+                accept=".xlsx,.xls,.csv"
+                required
+                class="rounded-md border border-gray-300 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium dark:border-gray-700 dark:bg-gray-800 dark:file:bg-gray-700 dark:file:text-gray-200"
+            />
+
+            <button type="submit" class="secondary-button shrink-0">
+                Upload &amp; Apply
+            </button>
+        </form>
+    </div>
+
     @if (session('success'))
         <div class="mb-4 rounded-md bg-green-100 px-4 py-3 text-sm text-green-700 dark:bg-green-900 dark:text-green-200">
             {{ session('success') }}
