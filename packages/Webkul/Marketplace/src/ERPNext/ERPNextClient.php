@@ -111,13 +111,21 @@ class ERPNextClient
 
     /**
      * Downloads a product image ERPNext returned as a site-relative path
-     * (e.g. "/files/dog-food.jpg"). Returns null rather than throwing so a
-     * single missing/unreachable image never aborts the whole sync.
+     * (e.g. "/files/dog-food.jpg" - but ERPNext's Image field is a free-text
+     * value, and not every item's was necessarily uploaded the same way, so
+     * a path missing its leading slash is joined safely here rather than
+     * naively concatenated onto the base URL, which would silently produce
+     * a malformed URL (e.g. "https://erp.example.comfiles/x.jpg") that
+     * fails to download - looking identical to "ERPNext has no image" even
+     * though ERPNext genuinely has one). Returns null rather than throwing
+     * so a single missing/unreachable image never aborts the whole sync.
      */
     public function downloadImage(string $path): ?string
     {
         try {
-            $url = str_starts_with($path, 'http') ? $path : $this->baseUrl.$path;
+            $url = str_starts_with($path, 'http')
+                ? $path
+                : rtrim($this->baseUrl, '/').'/'.ltrim($path, '/');
 
             $response = $this->client()->get($url);
 
