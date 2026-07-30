@@ -80,13 +80,17 @@
                         @endif
                     </div>
 
-                    <button
-                        type="button"
-                        id="use-my-location"
-                        class="rounded-lg border border-brandGreen px-3 py-1.5 text-xs font-semibold text-brandNavy hover:bg-brandGreen/5"
-                    >
-                        Use my location
-                    </button>
+                    <div class="text-right">
+                        <button
+                            type="button"
+                            id="use-my-location"
+                            class="rounded-lg border border-brandGreen px-3 py-1.5 text-xs font-semibold text-brandNavy hover:bg-brandGreen/5"
+                        >
+                            Use my location
+                        </button>
+
+                        <p id="use-my-location-error" class="mt-1 hidden text-xs text-rose-600"></p>
+                    </div>
                 </div>
 
                 @if ($eligibleVendors->isEmpty())
@@ -273,7 +277,16 @@
                 return;
             }
 
+            const errorEl = document.getElementById('use-my-location-error');
+            if (errorEl) {
+                errorEl.classList.add('hidden');
+            }
+
             if (! navigator.geolocation) {
+                if (errorEl) {
+                    errorEl.textContent = 'Your browser does not support location detection.';
+                    errorEl.classList.remove('hidden');
+                }
                 return;
             }
 
@@ -282,18 +295,49 @@
             button.disabled = true;
             button.textContent = 'Detecting your location...';
 
-            navigator.geolocation.getCurrentPosition(
-                function (position) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('lat', position.coords.latitude);
-                    url.searchParams.set('lng', position.coords.longitude);
-                    window.location.href = url.toString();
-                },
-                function () {
-                    button.disabled = false;
-                    button.textContent = originalText;
-                }
-            );
+            /**
+             * Same two-stage detect as the header's location modal and the
+             * seller sign-up form: a bare high-accuracy request with no
+             * fallback used to time out constantly on real devices and
+             * fail completely silently (button just reset, no explanation)
+             * - this both retries with a cheaper network-based lookup and
+             * always tells the customer what happened.
+             */
+            function detectLocation(options, isFallback) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('lat', position.coords.latitude);
+                        url.searchParams.set('lng', position.coords.longitude);
+                        window.location.href = url.toString();
+                    },
+                    function (error) {
+                        if (! isFallback && (error.code === 2 || error.code === 3)) {
+                            button.textContent = 'Still detecting (trying a faster method)...';
+
+                            detectLocation({ enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 }, true);
+                            return;
+                        }
+
+                        button.disabled = false;
+                        button.textContent = originalText;
+
+                        if (errorEl) {
+                            const messages = {
+                                1: 'Location permission denied. Please enter your address manually via "Set location" above.',
+                                2: 'Your location is currently unavailable. Please enter your address manually via "Set location" above.',
+                                3: 'Location request timed out. Please enter your address manually via "Set location" above.',
+                            };
+
+                            errorEl.textContent = messages[error.code] || 'Could not detect your location.';
+                            errorEl.classList.remove('hidden');
+                        }
+                    },
+                    options
+                );
+            }
+
+            detectLocation({ enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }, false);
         });
 
         // Live-recalculate the order summary as the customer picks a vendor.

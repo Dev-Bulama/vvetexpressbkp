@@ -38,7 +38,14 @@ class CheckoutVendorController extends Controller
         $longitude = $request->query('lng') ?? session('marketplace.customer_location.lng');
 
         if ($request->filled('lat') && $request->filled('lng')) {
-            session(['marketplace.customer_location' => ['lat' => $latitude, 'lng' => $longitude]]);
+            // Merge, don't replace - the header's "Set location" modal may
+            // have already saved a full address/city/label/landmark here,
+            // and overwriting the whole array with just coordinates would
+            // silently wipe all of that for the rest of checkout.
+            session(['marketplace.customer_location' => array_merge(
+                session('marketplace.customer_location', []),
+                ['lat' => $latitude, 'lng' => $longitude]
+            )]);
         }
 
         $latitude = $latitude ? (float) $latitude : null;

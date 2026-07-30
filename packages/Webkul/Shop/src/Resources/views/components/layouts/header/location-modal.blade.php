@@ -143,55 +143,75 @@
             button.disabled = true;
             button.textContent = 'Detecting your location...';
 
-            navigator.geolocation.getCurrentPosition(
-                function (position) {
-                    pendingCoords = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    };
+            /**
+             * High-accuracy GPS with only a 10s timeout and no fallback used
+             * to time out constantly on real devices (especially indoors,
+             * or on hardware with no real GPS chip) - this mirrors the same
+             * two-stage detect already used on the seller sign-up form: try
+             * high accuracy first, and if that specifically times out or is
+             * temporarily unavailable, retry once with a much cheaper,
+             * faster network/WiFi-based lookup before giving up.
+             */
+            function detectLocation(options, isFallback) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        pendingCoords = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                        };
 
-                    button.textContent = 'Location detected - looking up your address...';
+                        button.textContent = 'Location detected - looking up your address...';
 
-                    reverseGeocode(pendingCoords.lat, pendingCoords.lng)
-                        .then(function (resolved) {
-                            if (resolved.address) {
-                                document.getElementById('loc-address').value = resolved.address;
-                            }
+                        reverseGeocode(pendingCoords.lat, pendingCoords.lng)
+                            .then(function (resolved) {
+                                if (resolved.address) {
+                                    document.getElementById('loc-address').value = resolved.address;
+                                }
 
-                            if (resolved.city) {
-                                document.getElementById('loc-city').value = resolved.city;
-                            }
+                                if (resolved.city) {
+                                    document.getElementById('loc-city').value = resolved.city;
+                                }
 
-                            if (resolved.state) {
-                                document.getElementById('loc-state').value = resolved.state;
-                            }
+                                if (resolved.state) {
+                                    document.getElementById('loc-state').value = resolved.state;
+                                }
 
-                            if (! document.getElementById('loc-label').value) {
-                                document.getElementById('loc-label').value = 'Current location';
-                            }
-                        })
-                        .finally(function () {
-                            button.disabled = false;
-                            button.textContent = 'Location detected - confirm address below';
+                                if (! document.getElementById('loc-label').value) {
+                                    document.getElementById('loc-label').value = 'Current location';
+                                }
+                            })
+                            .finally(function () {
+                                button.disabled = false;
+                                button.textContent = 'Location detected - confirm address below';
 
-                            document.getElementById('loc-label').focus();
-                        });
-                },
-                function (error) {
-                    button.disabled = false;
-                    button.textContent = 'Use my current location';
+                                document.getElementById('loc-label').focus();
+                            });
+                    },
+                    function (error) {
+                        if (! isFallback && (error.code === 2 || error.code === 3)) {
+                            button.textContent = 'Still detecting (trying a faster method)...';
 
-                    const messages = {
-                        1: 'Location permission denied. Please enter your address manually below.',
-                        2: 'Your location is currently unavailable. Please enter your address manually below.',
-                        3: 'Location request timed out. Please enter your address manually below.',
-                    };
+                            detectLocation({ enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 }, true);
+                            return;
+                        }
 
-                    errorEl.textContent = messages[error.code] || 'Could not detect your location. Please enter your address manually below.';
-                    errorEl.classList.remove('hidden');
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-            );
+                        button.disabled = false;
+                        button.textContent = 'Use my current location';
+
+                        const messages = {
+                            1: 'Location permission denied. Please enter your address manually below.',
+                            2: 'Your location is currently unavailable. Please enter your address manually below.',
+                            3: 'Location request timed out. Please enter your address manually below.',
+                        };
+
+                        errorEl.textContent = messages[error.code] || 'Could not detect your location. Please enter your address manually below.';
+                        errorEl.classList.remove('hidden');
+                    },
+                    options
+                );
+            }
+
+            detectLocation({ enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }, false);
         };
 
         function updateLabels(label) {

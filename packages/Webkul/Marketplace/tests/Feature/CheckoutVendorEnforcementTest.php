@@ -136,6 +136,37 @@ it('blocks order placement via checkout.order.save.before when the selected vend
     expect($thrown->getMessage())->toContain('can no longer fulfil all the products');
 });
 
+it('merges new coordinates into the saved delivery location instead of wiping the address', function () {
+    // The header's "Set location" modal may have already saved a full
+    // address/city/label - clicking "Use my location" on the checkout
+    // vendor page (which passes lat/lng as query params) must not
+    // silently erase all of that, just refresh the coordinates.
+    $product = $this->makeTestProduct();
+    $seller = $this->makeTestSeller();
+    $this->makeTestOffer($seller, $product, quantity: 10);
+
+    $customer = $this->loginAsCustomer();
+    createActiveCartWithProduct($customer, $product);
+
+    session(['marketplace.customer_location' => [
+        'label' => 'Home',
+        'address' => '12 Test Street',
+        'city' => 'Lagos',
+        'lat' => 6.1,
+        'lng' => 3.1,
+    ]]);
+
+    get(route('marketplace.checkout.vendor.index', ['lat' => 6.6059, 'lng' => 3.3491]))
+        ->assertOk();
+
+    $location = session('marketplace.customer_location');
+
+    expect($location['address'])->toBe('12 Test Street');
+    expect($location['city'])->toBe('Lagos');
+    expect((float) $location['lat'])->toBe(6.6059);
+    expect((float) $location['lng'])->toBe(3.3491);
+});
+
 it('does not interfere with checkout when no marketplace vendor is selected', function () {
     // A non-marketplace checkout (or one where the vendor step hasn't
     // run yet) must never be blocked by this listener.
