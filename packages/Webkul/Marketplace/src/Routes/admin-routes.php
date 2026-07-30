@@ -24,6 +24,7 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
 
     Route::controller(ErpNextProductController::class)->prefix('marketplace/erpnext-products')->group(function () {
         Route::get('', 'index')->name('marketplace.admin.erpnext-products.index');
+        Route::post('bulk-visibility', 'bulkUpdateVisibility')->name('marketplace.admin.erpnext-products.bulk-visibility');
         Route::post('{id}/toggle-visibility', 'toggleVisibility')->name('marketplace.admin.erpnext-products.toggle-visibility');
     });
 

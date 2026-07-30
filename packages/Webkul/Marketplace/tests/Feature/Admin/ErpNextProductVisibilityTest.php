@@ -119,6 +119,125 @@ it('filters the ERPNext products list down to only uncategorized products', func
     $response->assertDontSee($categorized->sku);
 });
 
+it('searches the ERPNext products list by product name', function () {
+    $matching = $this->makeTestProduct();
+    app(\Webkul\Product\Repositories\ProductRepository::class)->update(['name' => 'Aquatab Strip 20 Tablets'], $matching->id);
+    app(\Webkul\Product\Helpers\Indexers\Flat::class)->refresh($matching->fresh());
+    ErpNextProduct::create(['product_id' => $matching->id, 'item_code' => 'SEARCH-001', 'last_synced_at' => now()]);
+
+    $other = $this->makeTestProduct();
+    app(\Webkul\Product\Repositories\ProductRepository::class)->update(['name' => 'Dog Chew Bone'], $other->id);
+    app(\Webkul\Product\Helpers\Indexers\Flat::class)->refresh($other->fresh());
+    ErpNextProduct::create(['product_id' => $other->id, 'item_code' => 'SEARCH-002', 'last_synced_at' => now()]);
+
+    $response = get(route('marketplace.admin.erpnext-products.index', ['search' => 'Aquatab']));
+
+    $response->assertOk();
+    $response->assertSee($matching->sku);
+    $response->assertDontSee($other->sku);
+});
+
+it('searches the ERPNext products list by SKU', function () {
+    $product = $this->makeTestProduct();
+    ErpNextProduct::create(['product_id' => $product->id, 'item_code' => 'SEARCH-003', 'last_synced_at' => now()]);
+
+    $other = $this->makeTestProduct();
+    ErpNextProduct::create(['product_id' => $other->id, 'item_code' => 'SEARCH-004', 'last_synced_at' => now()]);
+
+    $response = get(route('marketplace.admin.erpnext-products.index', ['search' => $product->sku]));
+
+    $response->assertOk();
+    $response->assertSee($product->sku);
+    $response->assertDontSee($other->sku);
+});
+
+it('searches the ERPNext products list by item code', function () {
+    $product = $this->makeTestProduct();
+    ErpNextProduct::create(['product_id' => $product->id, 'item_code' => 'UNIQUE-ITEM-CODE-999', 'last_synced_at' => now()]);
+
+    $other = $this->makeTestProduct();
+    ErpNextProduct::create(['product_id' => $other->id, 'item_code' => 'SEARCH-005', 'last_synced_at' => now()]);
+
+    $response = get(route('marketplace.admin.erpnext-products.index', ['search' => 'UNIQUE-ITEM-CODE-999']));
+
+    $response->assertOk();
+    $response->assertSee($product->sku);
+    $response->assertDontSee($other->sku);
+});
+
+it('reports no matches for a search term nothing matches, without erroring', function () {
+    $product = $this->makeTestProduct();
+    ErpNextProduct::create(['product_id' => $product->id, 'item_code' => 'SEARCH-006', 'last_synced_at' => now()]);
+
+    $response = get(route('marketplace.admin.erpnext-products.index', ['search' => 'totally-nonexistent-term-xyz']));
+
+    $response->assertOk();
+    $response->assertSee('No ERPNext-synced products match your search');
+});
+
+it('bulk-hides every checked ERPNext product in one action', function () {
+    $productA = $this->makeTestProduct();
+    $mappingA = ErpNextProduct::create(['product_id' => $productA->id, 'item_code' => 'BULK-001', 'last_synced_at' => now()]);
+
+    $productB = $this->makeTestProduct();
+    $mappingB = ErpNextProduct::create(['product_id' => $productB->id, 'item_code' => 'BULK-002', 'last_synced_at' => now()]);
+
+    post(route('marketplace.admin.erpnext-products.bulk-visibility'), [
+        'action' => 'hide',
+        'ids' => [$mappingA->id, $mappingB->id],
+    ])->assertRedirect(route('marketplace.admin.erpnext-products.index'));
+
+    $mappingA->refresh();
+    $mappingB->refresh();
+    $productA->refresh();
+    $productB->refresh();
+
+    expect($mappingA->isHidden())->toBeTrue();
+    expect($mappingB->isHidden())->toBeTrue();
+    expect((bool) $productA->status)->toBeFalse();
+    expect((bool) $productB->status)->toBeFalse();
+});
+
+it('bulk-makes every checked ERPNext product public in one action', function () {
+    $productA = $this->makeTestProduct();
+    $mappingA = ErpNextProduct::create([
+        'product_id' => $productA->id,
+        'item_code' => 'BULK-003',
+        'visibility_override' => ErpNextProduct::OVERRIDE_HIDDEN,
+        'last_synced_at' => now(),
+    ]);
+
+    post(route('marketplace.admin.erpnext-products.bulk-visibility'), [
+        'action' => 'show',
+        'ids' => [$mappingA->id],
+    ])->assertRedirect(route('marketplace.admin.erpnext-products.index'));
+
+    $mappingA->refresh();
+    $productA->refresh();
+
+    expect($mappingA->isHidden())->toBeFalse();
+    expect((bool) $productA->status)->toBeTrue();
+});
+
+it('leaves unchecked ERPNext products untouched by a bulk action', function () {
+    $checked = $this->makeTestProduct();
+    $checkedMapping = ErpNextProduct::create(['product_id' => $checked->id, 'item_code' => 'BULK-004', 'last_synced_at' => now()]);
+
+    $unchecked = $this->makeTestProduct();
+    $uncheckedMapping = ErpNextProduct::create(['product_id' => $unchecked->id, 'item_code' => 'BULK-005', 'last_synced_at' => now()]);
+
+    post(route('marketplace.admin.erpnext-products.bulk-visibility'), [
+        'action' => 'hide',
+        'ids' => [$checkedMapping->id],
+    ]);
+
+    $uncheckedMapping->refresh();
+    $unchecked->refresh();
+
+    expect($uncheckedMapping->isHidden())->toBeFalse();
+    expect((bool) $unchecked->status)->toBeTrue();
+});
+
 it('hides an ERPNext product from the public storefront when toggled', function () {
     $product = $this->makeTestProduct();
 
