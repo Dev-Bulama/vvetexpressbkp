@@ -10,8 +10,12 @@ use Webkul\Product\Repositories\ProductRepository;
  * show to customers automatically - the surgical/medical consumable items
  * this vendor's ERPNext sends with no price and no photo were showing on
  * the storefront as blank placeholder cards with ₦0.00, which is what
- * these tests guard against. An admin's explicit override (either
- * direction) still always wins over this automatic rule.
+ * these tests guard against. An admin's explicit "hide" always wins over
+ * this automatic rule, and so does "make public" for the missing-photo
+ * half of it - but never for a genuinely zero price, since a ₦0 listing
+ * is never a legitimate storefront item and "make public" force-publishing
+ * one anyway is how a broad bulk action can accidentally mass-publish a
+ * batch of otherwise correctly auto-hidden broken items.
  */
 beforeEach(function () {
     config([
@@ -140,11 +144,11 @@ it('keeps a product image intact across repeated re-syncs, instead of wiping it 
     expect((bool) $product->status)->toBeTrue();
 });
 
-it('lets an admin force an incomplete item public, and that survives a future sync', function () {
+it('lets an admin force a photo-less-but-real-priced item public, and that survives a future sync', function () {
     fakeErpNextItem([
         'item_code' => 'FORCED-001',
         'item_name' => 'Cotton Wool',
-        'standard_rate' => 0,
+        'standard_rate' => 500,
         'weight_per_unit' => 0.1,
     ]);
 
@@ -154,7 +158,7 @@ it('lets an admin force an incomplete item public, and that survives a future sy
     $mapping->update(['visibility_override' => ErpNextProduct::OVERRIDE_VISIBLE]);
     app(ProductRepository::class)->update(['status' => 1, 'visible_individually' => 1], $mapping->product_id);
 
-    // Re-sync with the exact same (still incomplete) data - the override
+    // Re-sync with the exact same (still photo-less) data - the override
     // must win, not the automatic rule.
     Artisan::call('erpnext:sync-products');
 
@@ -162,6 +166,33 @@ it('lets an admin force an incomplete item public, and that survives a future sy
 
     expect((bool) $product->status)->toBeTrue();
     expect((bool) $product->visible_individually)->toBeTrue();
+});
+
+it('never lets "make public" override survive for a genuinely zero-price item, even across a re-sync', function () {
+    fakeErpNextItem([
+        'item_code' => 'ZEROFORCE-001',
+        'item_name' => 'Cotton Wool',
+        'standard_rate' => 0,
+        'weight_per_unit' => 0.1,
+    ]);
+
+    Artisan::call('erpnext:sync-products');
+
+    $mapping = ErpNextProduct::where('item_code', 'ZEROFORCE-001')->first();
+
+    // Simulates the exact state a broad bulk "make public" action left
+    // behind before this floor existed.
+    $mapping->update(['visibility_override' => ErpNextProduct::OVERRIDE_VISIBLE]);
+    app(ProductRepository::class)->update(['status' => 1, 'visible_individually' => 1], $mapping->product_id);
+
+    // The next sync must self-heal this back to hidden - a ₦0 price is
+    // never a legitimate override target, however it got set.
+    Artisan::call('erpnext:sync-products');
+
+    $product = $mapping->product()->first();
+
+    expect((bool) $product->status)->toBeFalse();
+    expect((bool) $product->visible_individually)->toBeFalse();
 });
 
 it('lets an admin hide a complete item, and that survives a future sync', function () {

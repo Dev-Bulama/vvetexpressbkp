@@ -238,6 +238,61 @@ it('leaves unchecked ERPNext products untouched by a bulk action', function () {
     expect((bool) $unchecked->status)->toBeTrue();
 });
 
+it('refuses to make a zero-price ERPNext product public', function () {
+    $product = $this->makeTestProduct(0.0);
+
+    $mapping = ErpNextProduct::create([
+        'product_id' => $product->id,
+        'item_code' => 'ZEROPRICE-001',
+        'visibility_override' => ErpNextProduct::OVERRIDE_HIDDEN,
+        'last_synced_at' => now(),
+    ]);
+    app(\Webkul\Product\Repositories\ProductRepository::class)->update(['status' => 0, 'visible_individually' => 0], $product->id);
+
+    post(route('marketplace.admin.erpnext-products.toggle-visibility', $mapping->id))
+        ->assertRedirect(route('marketplace.admin.erpnext-products.index'));
+
+    $mapping->refresh();
+    $product->refresh();
+
+    expect($mapping->isHidden())->toBeTrue();
+    expect((bool) $product->status)->toBeFalse();
+    expect(session('error'))->toContain('no real price');
+});
+
+it('skips zero-price products in a bulk "make public" action but still applies to the rest', function () {
+    $zeroPriced = $this->makeTestProduct(0.0);
+    $zeroMapping = ErpNextProduct::create(['product_id' => $zeroPriced->id, 'item_code' => 'BULKZERO-001', 'last_synced_at' => now()]);
+    app(\Webkul\Product\Repositories\ProductRepository::class)->update(['status' => 0, 'visible_individually' => 0], $zeroPriced->id);
+
+    $realPriced = $this->makeTestProduct(500.0);
+    $realMapping = ErpNextProduct::create([
+        'product_id' => $realPriced->id,
+        'item_code' => 'BULKREAL-001',
+        'visibility_override' => ErpNextProduct::OVERRIDE_HIDDEN,
+        'last_synced_at' => now(),
+    ]);
+    app(\Webkul\Product\Repositories\ProductRepository::class)->update(['status' => 0, 'visible_individually' => 0], $realPriced->id);
+
+    post(route('marketplace.admin.erpnext-products.bulk-visibility'), [
+        'action' => 'show',
+        'ids' => [$zeroMapping->id, $realMapping->id],
+    ])->assertRedirect(route('marketplace.admin.erpnext-products.index'));
+
+    $zeroMapping->refresh();
+    $realMapping->refresh();
+    $zeroPriced->refresh();
+    $realPriced->refresh();
+
+    // The refusal leaves the zero-priced item's admin-override field
+    // untouched (still whatever it was before this bulk action) - what
+    // actually matters is that its product stayed hidden.
+    expect((bool) $zeroPriced->status)->toBeFalse();
+    expect($realMapping->isHidden())->toBeFalse();
+    expect((bool) $realPriced->status)->toBeTrue();
+    expect(session('success'))->toContain($zeroPriced->sku);
+});
+
 it('hides an ERPNext product from the public storefront when toggled', function () {
     $product = $this->makeTestProduct();
 

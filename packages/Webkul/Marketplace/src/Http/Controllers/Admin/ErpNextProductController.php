@@ -73,9 +73,15 @@ class ErpNextProductController extends Controller
     {
         $mapping = ErpNextProduct::findOrFail($id);
 
-        $this->applyVisibility($mapping, ! $mapping->isHidden());
+        $hide = ! $mapping->isHidden();
 
-        session()->flash('success', $mapping->isHidden()
+        if (! $this->applyVisibility($mapping, $hide)) {
+            session()->flash('error', 'Cannot make this product public - it has no real price set in ERPNext. Fix the price there and re-sync, or leave it hidden.');
+
+            return redirect()->route('marketplace.admin.erpnext-products.index', $this->currentFilters());
+        }
+
+        session()->flash('success', $hide
             ? 'Product hidden from the public storefront.'
             : 'Product is now visible on the public storefront - this overrides the automatic "complete listings only" rule for this item.');
 
@@ -100,18 +106,44 @@ class ErpNextProductController extends Controller
 
         $mappings = ErpNextProduct::whereIn('id', $ids)->get();
 
+        $hide = $request->input('action') === 'hide';
+
+        $applied = 0;
+        $skipped = collect();
+
         foreach ($mappings as $mapping) {
-            $this->applyVisibility($mapping, $request->input('action') === 'hide');
+            if ($this->applyVisibility($mapping, $hide)) {
+                $applied++;
+            } else {
+                $skipped->push($mapping->product?->sku ?? $mapping->item_code);
+            }
         }
 
-        session()->flash('success', count($mappings).' product'.(count($mappings) === 1 ? '' : 's').' '
-            .($request->input('action') === 'hide' ? 'hidden from' : 'made visible on').' the public storefront.');
+        $message = "{$applied} product".($applied === 1 ? '' : 's').' '.($hide ? 'hidden from' : 'made visible on').' the public storefront.';
+
+        if ($skipped->isNotEmpty()) {
+            $message .= ' Skipped, no real price set in ERPNext: '.$skipped->implode(', ').'.';
+        }
+
+        session()->flash($applied === 0 && $skipped->isNotEmpty() ? 'error' : 'success', $message);
 
         return redirect()->route('marketplace.admin.erpnext-products.index', $this->currentFilters());
     }
 
-    protected function applyVisibility(ErpNextProduct $mapping, bool $hide): void
+    /**
+     * Applies the hide/show decision, refusing to publish a product with
+     * no real price regardless of the admin's intent - see the comment in
+     * SyncErpNextProductsCommand::syncItem() for why this floor exists.
+     *
+     * @return bool false if the change was refused (attempted to make a
+     *              zero-price product public)
+     */
+    protected function applyVisibility(ErpNextProduct $mapping, bool $hide): bool
     {
+        if (! $hide && (float) $mapping->product->price <= 0) {
+            return false;
+        }
+
         $this->productRepository->update([
             'status' => $hide ? 0 : 1,
             'visible_individually' => $hide ? 0 : 1,
@@ -122,6 +154,8 @@ class ErpNextProductController extends Controller
         ]);
 
         $this->clearResponseCache();
+
+        return true;
     }
 
     /**

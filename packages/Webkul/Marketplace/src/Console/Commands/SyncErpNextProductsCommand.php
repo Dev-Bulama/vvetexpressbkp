@@ -214,14 +214,21 @@ class SyncErpNextProductsCommand extends Command
         }
 
         // Only complete listings (a real price and at least one photo) are
-        // fit for customers to see - an admin can still override either
-        // way via Admin\ErpNextProductController, and that decision always
-        // wins over this automatic rule on every future sync.
+        // fit for customers to see - an admin can still override the
+        // "needs a photo" half of that either way via
+        // Admin\ErpNextProductController, and that decision always wins
+        // over this automatic rule on every future sync. A real price is
+        // not override-able in the same way though: a ₦0 item is never a
+        // legitimate storefront listing (a customer can't meaningfully buy
+        // nothing for free), it's always a data problem, so "make public"
+        // never force-publishes one - this is what stops a broad bulk
+        // action from accidentally mass-publishing a batch of otherwise
+        // correctly auto-hidden zero-price items.
         $isComplete = $price > 0 && $product->images()->exists();
 
         $visible = match ($mapping->visibility_override) {
             ErpNextProduct::OVERRIDE_HIDDEN => false,
-            ErpNextProduct::OVERRIDE_VISIBLE => true,
+            ErpNextProduct::OVERRIDE_VISIBLE => $price > 0,
             default => $isComplete,
         };
 
