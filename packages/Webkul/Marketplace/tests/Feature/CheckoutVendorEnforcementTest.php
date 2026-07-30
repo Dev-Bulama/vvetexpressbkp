@@ -36,7 +36,25 @@ function createActiveCartWithProduct(CustomerContract $customer, ProductContract
     return CartModel::find($cart->id);
 }
 
-it('shows only fully eligible vendors at the checkout vendor step, never an incomplete one', function () {
+it('auto-assigns the only eligible vendor and skips straight to the delivery step', function () {
+    // Customers shouldn't have to consciously "pick a vendor" - the
+    // eligibility engine already guarantees the one it lists here can
+    // fulfil the whole cart, so visiting the vendor step directly should
+    // confirm it and move on, not make the customer click through a list.
+    $product = $this->makeTestProduct();
+    $seller = $this->makeTestSeller(['shop_name' => 'Only Eligible Shop']);
+    $this->makeTestOffer($seller, $product, quantity: 10);
+
+    $customer = $this->loginAsCustomer();
+    createActiveCartWithProduct($customer, $product);
+
+    get(route('marketplace.checkout.vendor.index'))
+        ->assertRedirect(route('marketplace.checkout.delivery.index'));
+
+    expect((int) session('marketplace.vendor_selection'))->toBe($seller->id);
+});
+
+it('shows only fully eligible vendors when the customer explicitly asks to choose', function () {
     $product = $this->makeTestProduct();
 
     $completeVendor = $this->makeTestSeller(['shop_name' => 'Complete Vendor Shop']);
@@ -48,7 +66,7 @@ it('shows only fully eligible vendors at the checkout vendor step, never an inco
     $customer = $this->loginAsCustomer();
     createActiveCartWithProduct($customer, $product);
 
-    $response = get(route('marketplace.checkout.vendor.index'));
+    $response = get(route('marketplace.checkout.vendor.index', ['choose' => 1]));
 
     // Note: this page's layout embeds heavy inline <script> blocks
     // containing raw `<`/`>` operators, which confuses strip_tags()
@@ -58,6 +76,18 @@ it('shows only fully eligible vendors at the checkout vendor step, never an inco
     $response->assertOk();
     $response->assertSee('Complete Vendor Shop');
     $response->assertDontSee('Incomplete Vendor Shop');
+});
+
+it('still renders the "no vendor eligible" page even without ?choose=1, since there is nothing to auto-assign', function () {
+    $product = $this->makeTestProduct();
+
+    // No seller stocks this product at all.
+    $customer = $this->loginAsCustomer();
+    createActiveCartWithProduct($customer, $product);
+
+    get(route('marketplace.checkout.vendor.index'))
+        ->assertOk()
+        ->assertSee('No single vendor currently has all the products');
 });
 
 it('rejects a manipulated seller_id that is not actually eligible', function () {
@@ -156,7 +186,7 @@ it('merges new coordinates into the saved delivery location instead of wiping th
         'lng' => 3.1,
     ]]);
 
-    get(route('marketplace.checkout.vendor.index', ['lat' => 6.6059, 'lng' => 3.3491]))
+    get(route('marketplace.checkout.vendor.index', ['lat' => 6.6059, 'lng' => 3.3491, 'choose' => 1]))
         ->assertOk();
 
     $location = session('marketplace.customer_location');

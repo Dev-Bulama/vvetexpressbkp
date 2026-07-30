@@ -71,6 +71,23 @@ class CheckoutVendorController extends Controller
             $selectedSellerId = $evaluation->eligible->first()->seller->id;
         }
 
+        // A customer shouldn't have to consciously "pick a vendor" -
+        // every candidate the eligibility engine returns here can already
+        // fulfil the whole cart, so auto-confirm the best-ranked one
+        // (nearest + highest-rated, per rank()) and go straight to the
+        // delivery step. The delivery step's "Change Vendor" link passes
+        // ?choose=1 to opt back into seeing the full list, for the rare
+        // customer who wants to pick a specific vendor themselves.
+        if (
+            ! $request->boolean('choose')
+            && $selectedSellerId
+            && $evaluation->eligible->isNotEmpty()
+        ) {
+            $this->confirmVendor($cart, $selectedSellerId);
+
+            return redirect()->route('marketplace.checkout.delivery.index');
+        }
+
         $eligibleVendors = $this->withCartTotals($evaluation->eligible, $evaluation->lines);
 
         $customer = auth()->guard('customer')->user();
@@ -126,6 +143,19 @@ class CheckoutVendorController extends Controller
             return redirect()->route('marketplace.checkout.vendor.index');
         }
 
+        $this->confirmVendor($cart, $sellerId);
+
+        session()->flash('success', 'Vendor selected. Continue to checkout.');
+
+        return redirect()->route('marketplace.checkout.delivery.index');
+    }
+
+    /**
+     * Locks in a vendor for the whole cart - shared by the auto-assign
+     * path in index() and the manual "choose a vendor" form in store().
+     */
+    protected function confirmVendor($cart, int $sellerId): void
+    {
         session(['marketplace.vendor_selection' => $sellerId]);
 
         $this->syncCartPricesToSelectedVendor($cart, $sellerId);
@@ -134,10 +164,6 @@ class CheckoutVendorController extends Controller
         // was picked before - clear it so the delivery step is re-quoted
         // for this vendor's actual pickup point.
         session()->forget('marketplace.delivery_selection');
-
-        session()->flash('success', 'Vendor selected. Continue to checkout.');
-
-        return redirect()->route('marketplace.checkout.delivery.index');
     }
 
     /**

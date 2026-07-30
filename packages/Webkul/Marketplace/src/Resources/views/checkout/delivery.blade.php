@@ -33,8 +33,15 @@
                     @csrf
 
                     <div class="rounded-xl border border-slate-200 p-4 sm:p-5">
-                        <p class="mb-1 font-semibold text-slate-800">{{ $seller->shop_name }}</p>
-                        <p class="mb-4 text-xs text-slate-500">Your whole order ships from this vendor.</p>
+                        <div class="mb-1 flex items-center justify-between gap-3">
+                            <p class="font-semibold text-slate-800">{{ $seller->shop_name }}</p>
+
+                            <a href="{{ route('marketplace.checkout.vendor.index', ['choose' => 1]) }}" class="text-xs font-semibold text-brandNavy hover:underline">
+                                Change Vendor
+                            </a>
+                        </div>
+
+                        <p class="mb-4 text-xs text-slate-500">Your whole order ships from this vendor - automatically matched since it has everything in your cart.</p>
 
                         @if ($quotes->isEmpty())
                             <p class="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">No delivery service can currently reach this address from this vendor.</p>
