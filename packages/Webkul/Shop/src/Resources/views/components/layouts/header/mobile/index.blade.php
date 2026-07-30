@@ -296,11 +296,13 @@
                             this.categories = JSON.parse(stored);
                             this.isLoading = false;
                             this.$nextTick(() => window.marketplacePeekScroll?.(this.$refs.scrollRow));
-
-                            return;
                         }
                     } catch (e) {}
 
+                    // Show the cached list instantly if there was one, but
+                    // always revalidate against the server in the
+                    // background so an admin's category changes don't stay
+                    // invisible until a customer happens to clear storage.
                     this.$axios.get("{{ route('shop.api.categories.tree') }}")
                         .then(response => {
                             this.isLoading = false;
@@ -632,11 +634,13 @@
                         if (stored) {
                             this.categories = JSON.parse(stored);
                             this.isLoading = false;
-                            return;
                         }
-
                     } catch (e) {}
 
+                    // Show the cached list instantly if there was one, but
+                    // always revalidate against the server in the
+                    // background so an admin's category changes don't stay
+                    // invisible until a customer happens to clear storage.
                     this.getCategories();
                 },
                 getCategories() {

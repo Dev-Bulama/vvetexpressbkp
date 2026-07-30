@@ -192,7 +192,7 @@
                     <div>
                         <p class="font-semibold text-slate-800">Fast Local Delivery</p>
                         <p class="mt-1 text-sm text-slate-500">Get your items delivered quickly and reliably.</p>
-                        <a href="#top-categories" class="mt-2 inline-block text-sm font-semibold text-brandNavy">Learn more &rsaquo;</a>
+                        <a href="{{ route('shop.cms.page', ['slug' => 'shipping-policy']) }}" class="mt-2 inline-block text-sm font-semibold text-brandNavy">Learn more &rsaquo;</a>
                     </div>
 
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 shrink-0 text-brandNavy/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

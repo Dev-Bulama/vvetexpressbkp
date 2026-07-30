@@ -525,12 +525,16 @@
                             this.categories = JSON.parse(stored);
                             this.isLoading = false;
                             this.$nextTick(() => window.marketplacePeekScroll?.(this.$refs.scrollRow));
-
-                            return;
                         }
-
                     } catch (e) {}
 
+                    // Show the cached list instantly if there was one, but
+                    // always revalidate against the server in the
+                    // background - a plain "cache forever" read here left
+                    // customers stuck seeing whatever category list
+                    // happened to be active the first time their browser
+                    // ever loaded the site, long after an admin
+                    // approved/renamed/disabled categories.
                     this.getCategories();
                 },
 
