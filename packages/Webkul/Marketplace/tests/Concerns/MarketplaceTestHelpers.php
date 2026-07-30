@@ -72,6 +72,12 @@ trait MarketplaceTestHelpers
             'rating' => 4.5,
             'service_radius_km' => 15,
             'is_delivery_enabled' => true,
+            // A vendor with no pickup coordinates is never eligible (see
+            // VendorCartEligibilityService) - defaulted here so tests
+            // about other eligibility rules don't have to think about
+            // location unless that's specifically what they're testing.
+            'latitude' => 6.5244,
+            'longitude' => 3.3792,
         ], $attributes));
     }
 

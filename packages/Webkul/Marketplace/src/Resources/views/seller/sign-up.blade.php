@@ -77,6 +77,9 @@
                 <input type="hidden" name="latitude" id="loc-latitude" value="{{ old('latitude') }}">
                 <input type="hidden" name="longitude" id="loc-longitude" value="{{ old('longitude') }}">
 
+                @error('latitude') <div class="error">Please set your shop's location using detect or the map before submitting.</div> @enderror
+                @error('longitude') <div class="error">Please set your shop's location using detect or the map before submitting.</div> @enderror
+
                 @if ($mapsApiKey)
                     <div id="loc-map-canvas"></div>
                     <div class="map-hint" id="loc-map-hint" style="display:none;">Drag the pin, or tap the map, to pinpoint the exact spot.</div>

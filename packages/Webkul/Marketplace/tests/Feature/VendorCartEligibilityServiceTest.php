@@ -41,6 +41,23 @@ it('excludes a vendor missing one required product entirely', function () {
     expect($evaluated->missing->first()->reason)->toBe('missing_product');
 });
 
+it('excludes a vendor that has every product but no pickup location configured', function () {
+    $product = $this->makeTestProduct();
+    $seller = $this->makeTestSeller(['latitude' => null, 'longitude' => null]);
+
+    $this->makeTestOffer($seller, $product, quantity: 10);
+
+    $cart = $this->makeTestCart([[$product, 1]]);
+
+    $result = $this->service->evaluate($cart);
+
+    expect($result->eligible)->toBeEmpty();
+
+    $evaluated = $result->evaluated->firstWhere('seller.id', $seller->id);
+    expect($evaluated->hasPickupLocation)->toBeFalse();
+    expect($evaluated->missing)->toBeEmpty();
+});
+
 it('excludes a vendor with insufficient quantity of a required product', function () {
     $product = $this->makeTestProduct();
     $seller = $this->makeTestSeller();

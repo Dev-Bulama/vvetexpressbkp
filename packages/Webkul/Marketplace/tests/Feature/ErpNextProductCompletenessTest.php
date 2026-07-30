@@ -252,3 +252,44 @@ it('syncs the ERPNext description into the product without blanking it on a late
 
     expect($product->description)->toBe('A genuinely useful description from ERPNext.');
 });
+
+it('gives the system seller a pickup location so ERPNext products remain checkout-eligible', function () {
+    // VendorCartEligibilityService excludes any seller with no pickup
+    // coordinates - without this, every ERPNext-synced product would
+    // become permanently un-orderable, since they're all owned by this
+    // one system seller.
+    fakeErpNextItem([
+        'item_code' => 'LOC-001',
+        'item_name' => 'Located Item',
+        'standard_rate' => 100,
+        'weight_per_unit' => 0.1,
+    ]);
+
+    Artisan::call('erpnext:sync-products');
+
+    $seller = \Webkul\Marketplace\Models\Seller::where('email', 'erpnext-sync@vetexpress.system')->first();
+
+    expect($seller->latitude)->not->toBeNull();
+    expect($seller->longitude)->not->toBeNull();
+});
+
+it('backfills the system seller pickup location on re-sync if it was somehow left empty', function () {
+    \Webkul\Marketplace\Models\Seller::updateOrCreate(
+        ['email' => 'erpnext-sync@vetexpress.system'],
+        ['name' => 'External Catalog', 'shop_name' => 'External Catalog', 'password' => bcrypt('x'), 'status' => 1, 'latitude' => null, 'longitude' => null]
+    );
+
+    fakeErpNextItem([
+        'item_code' => 'LOC-002',
+        'item_name' => 'Located Item 2',
+        'standard_rate' => 100,
+        'weight_per_unit' => 0.1,
+    ]);
+
+    Artisan::call('erpnext:sync-products');
+
+    $seller = \Webkul\Marketplace\Models\Seller::where('email', 'erpnext-sync@vetexpress.system')->first();
+
+    expect($seller->latitude)->not->toBeNull();
+    expect($seller->longitude)->not->toBeNull();
+});

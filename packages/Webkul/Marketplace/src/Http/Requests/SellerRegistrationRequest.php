@@ -21,8 +21,12 @@ class SellerRegistrationRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            // A vendor with no pickup coordinates can never actually be
+            // assigned a delivery quote - the sign-up form already offers
+            // both auto-detect and a manual map pin, so this is always
+            // satisfiable without depending solely on browser geolocation.
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
 
             /**
              * Optional live-recorded shop walkthrough (see sign-up.blade.php

@@ -138,7 +138,15 @@ class VendorCartEligibilityService
             }
         }
 
-        $distance = ($latitude !== null && $longitude !== null && $seller->latitude && $seller->longitude)
+        // A vendor with no pickup coordinates at all can never actually be
+        // quoted a delivery - that used to only surface as a dead end at
+        // the delivery step (after the customer had already picked this
+        // vendor), so it must disqualify eligibility here instead of
+        // silently passing through the distance check below (which treats
+        // "no distance computable" as "assume within range").
+        $hasPickupLocation = $seller->latitude !== null && $seller->longitude !== null;
+
+        $distance = ($latitude !== null && $longitude !== null && $hasPickupLocation)
             ? $this->haversineKm($latitude, $longitude, (float) $seller->latitude, (float) $seller->longitude)
             : null;
 
@@ -154,10 +162,11 @@ class VendorCartEligibilityService
 
         return (object) [
             'seller' => $seller,
-            'eligible' => $missing->isEmpty() && $locationOk && $openOk,
+            'eligible' => $missing->isEmpty() && $hasPickupLocation && $locationOk && $openOk,
             'missing' => $missing,
             'coverageFraction' => $lines->isEmpty() ? 1.0 : (($lines->count() - $missing->count()) / $lines->count()),
             'distance_km' => $distance,
+            'hasPickupLocation' => $hasPickupLocation,
             'locationOk' => $locationOk,
             'openOk' => $openOk,
         ];

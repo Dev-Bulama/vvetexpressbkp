@@ -18,6 +18,11 @@ function validSellerPayload(array $overrides = []): array
         'email' => 'seller-'.str()->random(10).'@test.local',
         'password' => 'password123',
         'password_confirmation' => 'password123',
+        // A pickup location is required (see the "must have a pickup
+        // location" test below) - defaulted here so every other test in
+        // this file that isn't specifically about location keeps working.
+        'latitude' => 6.5244,
+        'longitude' => 3.3792,
     ], $overrides);
 }
 
@@ -41,16 +46,13 @@ it('registers a seller with an auto-detected shop location', function () {
     expect($seller->status)->toBe(Seller::STATUS_PENDING);
 });
 
-it('registers a seller without a location when detection was not used', function () {
-    $payload = validSellerPayload();
+it('rejects registration without a pickup location', function () {
+    $payload = validSellerPayload(['latitude' => null, 'longitude' => null]);
 
-    post(route('marketplace.seller.register.store'), $payload)
-        ->assertRedirect(route('marketplace.seller.session.index'));
+    $response = post(route('marketplace.seller.register.store'), $payload);
 
-    $seller = Seller::where('email', $payload['email'])->firstOrFail();
-
-    expect($seller->latitude)->toBeNull();
-    expect($seller->longitude)->toBeNull();
+    $response->assertSessionHasErrors(['latitude', 'longitude']);
+    expect(Seller::where('email', $payload['email'])->exists())->toBeFalse();
 });
 
 it('stores a live-recorded shop verification video attached to the registration', function () {

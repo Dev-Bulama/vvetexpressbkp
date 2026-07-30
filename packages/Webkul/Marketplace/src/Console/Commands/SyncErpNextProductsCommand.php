@@ -333,7 +333,14 @@ class SyncErpNextProductsCommand extends Command
      */
     protected function systemSeller(): Seller
     {
-        return Seller::firstOrCreate(
+        // VendorCartEligibilityService requires every seller to have a
+        // pickup location - without one, this seller (and every ERPNext
+        // product it owns) would never be eligible for any order. Default
+        // to the business's own registered address (see the storefront
+        // footer) since there's no per-item pickup point for these items;
+        // an admin can correct this to the exact warehouse coordinates via
+        // seller management if it differs.
+        $seller = Seller::firstOrCreate(
             ['email' => 'erpnext-sync@vetexpress.system'],
             [
                 'name' => Seller::SYSTEM_SELLER_SHOP_NAME,
@@ -341,7 +348,15 @@ class SyncErpNextProductsCommand extends Command
                 'password' => bcrypt(str()->random(40)),
                 'status' => Seller::STATUS_APPROVED,
                 'rating' => 5.0,
+                'latitude' => 6.6059,
+                'longitude' => 3.3491,
             ]
         );
+
+        if ($seller->latitude === null || $seller->longitude === null) {
+            $seller->update(['latitude' => 6.6059, 'longitude' => 3.3491]);
+        }
+
+        return $seller;
     }
 }
