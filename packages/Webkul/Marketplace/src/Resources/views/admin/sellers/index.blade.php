@@ -7,6 +7,10 @@
         <p class="py-3 text-xl font-bold text-gray-800 dark:text-white">
             Sellers
         </p>
+
+        <a href="{{ route('marketplace.admin.sellers.create') }}" class="primary-button">
+            Add Vendor
+        </a>
     </div>
 
     @if (session('success'))
